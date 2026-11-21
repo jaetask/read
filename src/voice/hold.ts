@@ -19,6 +19,9 @@ export class Hold {
     this.said = true;
     return out;
   }
+  restart(): void {
+    if (!this.open) this.held = "";
+  }
   tool(): void {
     if (this.held.trim()) this.dropped.push(this.held.trim());
     this.held = "";
