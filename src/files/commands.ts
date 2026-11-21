@@ -294,3 +294,28 @@ export function parseOpen(text: string, files: Named[], current?: string): OpenC
 }
 
 export const CHOICE = /\b(the )?(first|1st|one|former|second|2nd|two|latter)( one)?\b/i;
+
+export type AppCommand = { cmd: "view"; view: "chat" | "trajectory" } | { cmd: "end_call" };
+
+const TRAJECTORY = /\btrajector(y|ies)\b/i;
+const AWAY_FROM_TRAJECTORY = /\b(from|off|close|leave|hide)\b[\w\s]{0,12}\btrajectory\b/i;
+const TO_CHAT = /\b(back to|switch to|go to|show|open|change to|return to)\b[\w\s]{0,12}\bchat\b/i;
+const END_CALL =
+  /\b(hang up|end (the |this )?call|drop (off )?(the |this )?call|drop off|stop (the |this )?call|leave (the |this )?call|finish (the |this )?call|say goodbye|goodbye|bye bye)\b/i;
+
+export function parseApp(text: string): AppCommand | undefined {
+  const t = (text ?? "").trim();
+  if (!t) return undefined;
+  if (END_CALL.test(t)) return { cmd: "end_call" };
+  if (TRAJECTORY.test(t) && !AWAY_FROM_TRAJECTORY.test(t)) {
+    if (
+      /\b(show|open|switch|go|change|see|move|display|put)\b|\btrajectory (view|mode|tab)\b/i.test(
+        t,
+      )
+    )
+      return { cmd: "view", view: "trajectory" };
+  }
+  if (TO_CHAT.test(t) || (AWAY_FROM_TRAJECTORY.test(t) && /\bchat\b/i.test(t)))
+    return { cmd: "view", view: "chat" };
+  return undefined;
+}

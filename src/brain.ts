@@ -4,6 +4,7 @@ import { Trace, tracing } from "./chat/trace.js";
 import {
   CHOICE,
   NUMBERED,
+  parseApp,
   parseCommand,
   parseOpen,
   type ReadingCommand,
@@ -116,6 +117,21 @@ export function readBrain(options: ReadBrainOptions): ReadBrain {
   }
 
   async function* deterministic(text: string): AsyncGenerator<string, boolean> {
+    const app = parseApp(text);
+    if (app?.cmd === "view") {
+      await call("view-show", { view: app.view });
+      const note = app.view === "trajectory" ? "Showing the trajectory." : "Back to the chat.";
+      options.note(note);
+      record(note, "command", `app: view → ${app.view}`);
+      return true;
+    }
+    if (app?.cmd === "end_call") {
+      await call("reader-pause");
+      await call("call-end");
+      record("Goodbye.", "command", "app: end call");
+      yield "Goodbye.";
+      return true;
+    }
     const files = reader.library.files();
     const doc = await reader.document();
     const titles = new Map(files.map((f) => [f.path, f.title]));

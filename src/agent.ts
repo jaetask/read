@@ -37,6 +37,7 @@ export function fileContext(doc: Document, index: number, reading: boolean): str
     "Answer a question about the file in one to three short spoken sentences, using only the file text below. If the file doesn't cover it, say plainly that the file doesn't cover that; don't guess or add outside knowledge.",
     "When asked to explain something more simply, or in another way, do it from the file text.",
     "Don't offer to continue: the person will say carry on when ready.",
+    "You can also switch the conversation pane between the chat and the trajectory with view_show, and end the voice call with call_end when the person says goodbye.",
     "When asked to read, play, go to, repeat or move on in the file, use the reader tools and say only a few words; never paste or retell the text instead. A question about the file is never a request to read: answer it in words and leave the reader where it is.",
     total > FILE_IN_FULL
       ? "The file is long, so only the sections around the reading are below; reader_state lists them all and file_find looks things up."
@@ -74,6 +75,8 @@ const AGENT_TOOLS = new Set(
     "reader-previous",
     "reader-pause",
     "reader-resume",
+    "view-show",
+    "call-end",
   ].map((name) => `reader.${name}`),
 );
 

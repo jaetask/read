@@ -345,6 +345,32 @@ export const folderRemove = defineAction({
   },
 });
 
+export const viewShow = defineAction({
+  name: "view-show",
+  description:
+    "Switch the conversation pane between the chat and the trajectory, the step-by-step log of each turn with its reader calls and timings.",
+  effect: "write",
+  input: z.object({ view: z.enum(["chat", "trajectory"]) }),
+  output: z.object({ view: z.enum(["chat", "trajectory"]) }),
+  run: ({ view }, { reader }: Ctx) => {
+    reader.show(view);
+    return { view };
+  },
+});
+
+export const callEnd = defineAction({
+  name: "call-end",
+  description:
+    "End the hands-free voice call, after the reply has been spoken. Use it when the person says goodbye or asks to hang up or drop off the call.",
+  effect: "write",
+  input: z.object({}),
+  output: z.object({ ended: z.boolean() }),
+  run: (_input, { reader }: Ctx) => {
+    reader.endCall();
+    return { ended: true };
+  },
+});
+
 export const chatTurns = defineAction({
   name: "chat-turns",
   description:
@@ -440,6 +466,8 @@ export const readerDomain = defineDomain<ReaderDeps>({
     readerPause,
     readerResume,
     readerClose,
+    viewShow,
+    callEnd,
     chatTurns,
     chatTimeline,
   ],

@@ -5,7 +5,7 @@ import { ComposerVoice } from "./composer-voice";
 import { AgentAvatar, Icon } from "./icons";
 import { renderMarkdown } from "./markdown";
 import { Trajectory } from "./trajectory";
-import { type Line, say, type VoiceView } from "./voice";
+import { type Line, say, showTab, type VoiceView } from "./voice";
 
 const AGENT = "Read";
 
@@ -42,7 +42,6 @@ export function ChatPane({
   problem: string;
   onDismiss: () => void;
 }) {
-  const [tab, setTab] = useState<"chat" | "trajectory">("chat");
   const [text, setText] = useState("");
   const end = useRef<HTMLDivElement>(null);
   const size = voice.lines.length + (voice.lines.at(-1)?.text.length ?? 0);
@@ -64,6 +63,7 @@ export function ChatPane({
     }
   };
   const error = problem || voice.error;
+  const tab = voice.tab;
 
   return (
     <main className="flex h-full min-w-0 flex-1 flex-col" aria-label="Conversation">
@@ -78,7 +78,7 @@ export function ChatPane({
           className="absolute right-3 h-9 rounded-full px-4"
           aria-pressed={tab === "trajectory"}
           title={tab === "chat" ? "Show the trajectory" : "Back to the chat"}
-          onClick={() => setTab(tab === "chat" ? "trajectory" : "chat")}
+          onClick={() => showTab(tab === "chat" ? "trajectory" : "chat")}
         >
           {tab === "chat" ? "Chat" : "Trajectory"}
         </Button>
