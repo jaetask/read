@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
@@ -23,5 +24,13 @@ execFileSync(
   at("../node_modules/.bin/tailwindcss"),
   ["-i", at("../page/app.css"), "-o", at("../public/app.css"), "--minify"],
   { stdio: ["ignore", "ignore", "inherit"] },
+);
+const stamp = Date.now().toString(36);
+writeFileSync(
+  at("../public/index.html"),
+  readFileSync(at("../page/index.html"), "utf8").replace(
+    /(app\.js|fonts\.css|app\.css)"/g,
+    `$1?v=${stamp}"`,
+  ),
 );
 console.log("built public/app.js, public/fonts.css and public/app.css");
