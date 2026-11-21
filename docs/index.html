@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Read · User guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a long guide. Sticky section rail on top, one column of prose,
+   interactive "bench" panels for the moving parts. */
+:root{
+  --bg:#f4f6f6; --panel:#ffffff; --sunk:#e9eeee; --ink:#13201f; --muted:#56676a; --line:#d3dcdc;
+  --pi:#0d7a6f; --pi-soft:#d6efeb; --an:#8a3f78; --an-soft:#f3e2ef;
+  --ok:#2f7d32; --ok-soft:#e1f1e1; --warn:#a86400; --warn-soft:#fbecd5; --bad:#b3261e; --bad-soft:#f9e0de;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+a{color:var(--pi)}
+code,.mono{font-family:var(--mono);font-size:.88em}
+:not(pre)>code{background:var(--sunk);padding:.08em .35em;border-radius:4px}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.prose{max-width:68ch}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3.1rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:clamp(1.5rem,3vw,2rem);font-weight:700}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:14px}
+section{padding-block:56px;border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+
+/* nav */
+nav.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);border-bottom:1px solid var(--line)}
+nav.rail .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:thin}
+nav.rail a{flex:none;font-size:.86rem;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
+nav.rail a:hover,nav.rail a:focus-visible{color:var(--ink);background:var(--sunk);outline:none}
+nav.rail a.on{color:var(--pi);background:var(--pi-soft)}
+
+/* hero */
+header.hero{padding-block:48px 40px}
+.hero .stack{gap:18px}
+.lede{font-size:1.15rem;color:var(--muted);max-width:62ch}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{font-family:var(--mono);font-size:.76rem;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--panel)}
+.tag.pi{border-color:var(--pi);color:var(--pi)}
+.tag.an{border-color:var(--an);color:var(--an)}
+.answer{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:8px}
+.answer > div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.answer > div > b:first-child{display:block;font-family:var(--display);font-size:1.05rem;margin-bottom:4px}
+
+/* bench panels */
+.bench{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:22px}
+.bench-head{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.btn{font:inherit;font-size:.88rem;font-weight:500;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:7px;cursor:pointer}
+.btn:hover{border-color:var(--pi)}
+.btn:focus-visible{outline:2px solid var(--pi);outline-offset:2px}
+.btn.primary{background:var(--pi);border-color:var(--pi);color:var(--panel)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn[aria-pressed="true"]{background:var(--pi-soft);border-color:var(--pi);color:var(--pi)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* actor map */
+.layers{display:flex;flex-direction:column;gap:10px}
+.layer{display:grid;grid-template-columns:130px 1fr;gap:10px;align-items:start}
+.layer-name{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:9px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.actor{font:inherit;font-size:.9rem;font-weight:500;background:var(--sunk);border:1px solid transparent;color:var(--ink);padding:7px 11px;border-radius:8px;cursor:pointer;text-align:left}
+.actor:hover{border-color:var(--pi)}
+.actor:focus-visible{outline:2px solid var(--pi);outline-offset:2px}
+.actor.on{background:var(--pi-soft);border-color:var(--pi);color:var(--pi)}
+.actor.rel{border-color:var(--pi);border-style:dashed}
+.detail{margin-top:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;border-top:1px solid var(--line);padding-top:16px}
+.detail h3{margin-bottom:6px}
+.detail .rels{font-size:.88rem;color:var(--muted)}
+pre{margin:0;background:var(--sunk);border-radius:8px;padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:.8rem;line-height:1.55;min-width:0}
+pre .c{color:var(--muted)}
+pre .k{color:var(--pi)}
+.caption{font-size:.82rem;color:var(--muted)}
+
+/* run stepper */
+.run-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr);gap:14px}
+.col{background:var(--sunk);border-radius:9px;padding:12px;min-width:0}
+.col h4{margin:0 0 8px;font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.entry,.task{font-family:var(--mono);font-size:.78rem;padding:6px 8px;border-radius:6px;background:var(--panel);border:1px solid var(--line);margin-bottom:6px;overflow-wrap:anywhere}
+.entry.new,.task.new{border-color:var(--pi);box-shadow:0 0 0 2px var(--pi-soft)}
+.task .st{float:right;font-size:.7rem;padding:0 6px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.task .st.running{background:var(--pi-soft);color:var(--pi)}
+.task .st.waiting{background:var(--warn-soft);color:var(--warn)}
+.task .st.done{background:var(--ok-soft);color:var(--ok)}
+.task.child{margin-left:16px}
+.stepinfo{margin-top:14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.box{border-radius:9px;padding:12px 14px;font-size:.92rem}
+.box.say{background:var(--pi-soft)}
+.box.crash{background:var(--bad-soft)}
+.box.crash b{color:var(--bad)}
+.box.say b{color:var(--pi)}
+.progress{display:flex;gap:4px}
+.progress span{width:22px;height:5px;border-radius:3px;background:var(--line)}
+.progress span.on{background:var(--pi)}
+.empty{font-size:.8rem;color:var(--muted);font-style:italic}
+
+/* tool lab */
+.lab{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:18px}
+.picker{display:flex;flex-direction:column;gap:8px}
+.picker .btn{text-align:left}
+.picker .btn small{display:block;color:var(--muted);font-size:.76rem;font-weight:400}
+.timeline{list-style:none;margin:0;padding:0;border-left:2px solid var(--line)}
+.timeline li{position:relative;padding:0 0 12px 16px}
+.timeline li::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--pi)}
+.timeline li.bad::before{border-color:var(--bad);background:var(--bad-soft)}
+.timeline li.wait::before{border-color:var(--warn);background:var(--warn-soft)}
+.timeline li.ok::before{border-color:var(--ok);background:var(--ok-soft)}
+.timeline b{display:block;font-size:.92rem}
+.timeline span{font-size:.86rem;color:var(--muted)}
+.vs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:6px}
+.vs > div{border-radius:9px;padding:12px 14px;min-width:0}
+.vs .pi-side{background:var(--pi-soft)}
+.vs .an-side{background:var(--an-soft)}
+.vs h4{margin:0 0 8px;font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500}
+.vs .pi-side h4{color:var(--pi)}
+.vs .an-side h4{color:var(--an)}
+.vs .an-side p{font-size:.9rem}
+
+/* cards */
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.card h3{font-size:1.02rem}
+.card p{font-size:.92rem;color:var(--muted)}
+
+/* mapping table */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.filters input{font:inherit;font-size:.9rem;padding:6px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);min-width:0;flex:1 1 200px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:.88rem}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--sunk);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.an-col code{background:var(--an-soft)}
+td.pi-col code{background:var(--pi-soft)}
+.fit{display:inline-block;font-family:var(--mono);font-size:.72rem;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.fit.better{background:var(--ok-soft);color:var(--ok)}
+.fit.direct{background:var(--pi-soft);color:var(--pi)}
+.fit.adapter{background:var(--warn-soft);color:var(--warn)}
+.fit.gap{background:var(--bad-soft);color:var(--bad)}
+.tally{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+.tally .fit{font-size:.8rem;padding:4px 10px}
+
+/* paths */
+.paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:20px}
+.path{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.path.rec{border-color:var(--pi);box-shadow:0 0 0 1px var(--pi)}
+.path .verdict{font-family:var(--mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.06em}
+.path.rec .verdict{color:var(--pi)}
+.path ul{margin:0;padding-left:18px;font-size:.9rem;color:var(--muted)}
+.diagram{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:.74rem}
+.diagram div{padding:6px 8px;border-radius:6px;text-align:center}
+.d-an{background:var(--an-soft);color:var(--an)}
+.d-pi{background:var(--pi-soft);color:var(--pi)}
+.d-x{background:var(--sunk);color:var(--muted)}
+.d-arrow{color:var(--muted);padding:0!important}
+
+/* verdict */
+.verdict-box{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--pi);border-radius:10px;padding:20px;margin-top:18px}
+.checklist{list-style:none;padding:0;margin:16px 0 0;display:flex;flex-direction:column;gap:8px}
+.checklist label{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer}
+.checklist input{margin-top:5px;accent-color:var(--pi)}
+.checklist b{display:block;font-size:.95rem}
+.checklist span{font-size:.86rem;color:var(--muted)}
+footer{padding-block:40px;color:var(--muted);font-size:.85rem;border-top:1px solid var(--line)}
+
+/* figures (inline SVG diagrams) */
+figure.fig{margin:22px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.fig-scroll{overflow-x:auto}
+figure.fig svg{display:block;width:100%;height:auto;color:var(--ink)}
+figure.fig figcaption{font-size:.86rem;color:var(--muted);margin-top:10px;max-width:80ch}
+.s-box{fill:var(--panel);stroke:var(--line);stroke-width:1.2}
+.s-sunk{fill:var(--sunk);stroke:var(--line);stroke-width:1}
+.s-pi{fill:var(--pi-soft);stroke:var(--pi);stroke-width:1.4}
+.s-an{fill:var(--an-soft);stroke:var(--an);stroke-width:1.4}
+.s-warn{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1.4}
+.s-bad{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.4}
+.s-ok{fill:var(--ok-soft);stroke:var(--ok);stroke-width:1.4}
+.s-dash{fill:none;stroke:var(--muted);stroke-width:1.2;stroke-dasharray:5 4}
+.ln{stroke:currentColor;stroke-width:1.4;fill:none}
+.ln-pi{stroke:var(--pi);stroke-width:1.6;fill:none}
+.ln-an{stroke:var(--an);stroke-width:1.6;fill:none}
+.ln-bad{stroke:var(--bad);stroke-width:1.5;fill:none;stroke-dasharray:6 4}
+.ln-mut{stroke:var(--muted);stroke-width:1.2;fill:none}
+.t{font-family:var(--body);font-size:13px;fill:currentColor}
+.tb{font-family:var(--body);font-size:13px;font-weight:600;fill:currentColor}
+.th{font-family:var(--display);font-size:15px;font-weight:700;fill:currentColor}
+.ts{font-family:var(--body);font-size:11px;fill:var(--muted)}
+.tm{font-family:var(--mono);font-size:11.5px;fill:currentColor}
+.c-pi{fill:var(--pi)} .c-an{fill:var(--an)} .c-bad{fill:var(--bad)} .c-warn{fill:var(--warn)} .c-ok{fill:var(--ok)} .c-mut{fill:var(--muted)}
+.mk{fill:currentColor} .mk-pi{fill:var(--pi)} .mk-an{fill:var(--an)} .mk-bad{fill:var(--bad)} .mk-mut{fill:var(--muted)}
+.plugin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:18px}
+
+@media (max-width:820px){
+  .run-grid{grid-template-columns:minmax(0,1fr)}
+  .stepinfo,.detail,.vs,.lab{grid-template-columns:minmax(0,1fr)}
+  .layer{grid-template-columns:minmax(0,1fr)}
+  .layer-name{padding-top:0}
+}
+@media (prefers-reduced-motion:no-preference){
+  .entry.new,.task.new{animation:pop .35s ease-out}
+  @keyframes pop{from{transform:translateY(-3px);opacity:.6}to{transform:none;opacity:1}}
+}
+</style>
+<style>
+/* glossary, details and rules */
+.gloss{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:14px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:12px 14px;min-width:0}
+.term b{font-family:var(--display);font-size:1rem}
+.term p{font-size:.88rem;color:var(--muted);margin-top:4px}
+.term .avoid{font-size:.78rem;font-style:italic;margin-top:6px}
+.term .ddd{font-family:var(--mono);font-size:.7rem;color:var(--an);float:right;margin-left:8px}
+details.prob{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:0;margin-top:10px}
+details.prob summary{cursor:pointer;padding:13px 16px;font-weight:600;display:flex;gap:10px;align-items:baseline;list-style:none}
+details.prob summary::-webkit-details-marker{display:none}
+details.prob summary::before{content:"+";font-family:var(--mono);color:var(--pi);width:1ch;flex:none}
+details.prob[open] summary::before{content:"–"}
+details.prob summary:focus-visible{outline:2px solid var(--pi);outline-offset:2px;border-radius:10px}
+details.prob .body{padding:0 16px 14px 36px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;font-size:.92rem}
+details.prob .body div b{display:block;font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+details.prob .attack b{color:var(--bad)} details.prob .answer2 b{color:var(--ok)}
+.node rect{fill:var(--panel);stroke:var(--line);stroke-width:1.3}
+.node.end rect{fill:var(--sunk)}
+.node.on rect{fill:var(--pi-soft);stroke:var(--pi);stroke-width:2.2}
+.node.on text{fill:var(--pi)}
+.simlog{font-family:var(--mono);font-size:.78rem;background:var(--sunk);border-radius:8px;padding:10px 12px;min-height:44px;overflow-wrap:anywhere}
+.phase{display:grid;grid-template-columns:54px minmax(0,1fr);gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+.phase:first-child{border-top:0}
+.phase .n{font-family:var(--display);font-size:1.6rem;font-weight:700;color:var(--pi);line-height:1}
+.phase h3{margin-bottom:4px}
+.phase p{font-size:.92rem;color:var(--muted)}
+.phase .proof{font-size:.84rem;margin-top:6px;color:var(--ink)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:14px;margin-top:18px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:18px}
+@media (max-width:820px){details.prob .body{grid-template-columns:minmax(0,1fr);padding-left:16px}}
+</style>
+<style>
+/* board, ticket and inbox panels */
+.fx{display:inline-block;font-family:var(--mono);font-size:.74rem;font-weight:500;padding:1px 8px;border-radius:999px}
+.fx.read{background:var(--ok-soft);color:var(--ok)} .fx.write{background:var(--pi-soft);color:var(--pi)} .fx.danger{background:var(--bad-soft);color:var(--bad)}
+.mock table{min-width:0} .card .fx{width:max-content;justify-self:start;align-self:start}
+.toggles{display:flex;flex-wrap:wrap;gap:8px}
+.kind{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:500;padding:1px 8px;border-radius:999px;width:max-content}
+.kind.todo{background:var(--panel);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)} .kind.doing{background:var(--pi-soft);color:var(--pi)} .kind.waiting{background:var(--an-soft);color:var(--an)} .kind.done{background:var(--ok-soft);color:var(--ok)}
+.colrows{display:grid;gap:8px;margin:12px 0}
+.colrow{display:grid;grid-template-columns:minmax(0,1fr) 120px auto auto;gap:8px;align-items:center}
+.colrow input,.colrow select{font:inherit;font-size:.88rem;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);min-width:0}
+.miniboard{display:flex;gap:8px;overflow-x:auto;margin:14px 0;padding-bottom:4px}
+.mcol{flex:0 0 130px;min-height:110px;background:var(--sunk);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;font-size:.84rem}
+.mticket{background:var(--panel);border:1px solid var(--pi);border-radius:6px;padding:6px 8px;font-size:.8rem;color:var(--ink)}
+.mticket.blocked{border-color:var(--bad)} .mticket small{display:block;color:var(--bad);font-size:.72rem}
+@media (max-width:560px){.colrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.tkwrap{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:22px;align-items:start}
+.tcard{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,0,0,.05);font-size:.9rem;color:var(--ink)}
+.tcard:focus-visible{outline:2px solid var(--pi)}
+.tcard .lbls{gap:4px} .bar{width:36px;height:6px;border-radius:3px} .bar.pi{background:var(--pi)} .bar.an{background:var(--an)} .bar.bad{background:var(--bad)}
+.tmeta{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:.8rem} .tmeta .av{margin-left:auto}
+.av{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font-size:.74rem;font-weight:600;flex:none} .av.pi{background:var(--pi-soft);color:var(--pi)} .av.an{background:var(--an-soft);color:var(--an)}
+.tk{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.tktitle{font-size:1.25rem;margin:0} .tkdesc{margin:0;color:var(--ink)}
+.lbls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lbl{font-size:.76rem;font-weight:500;padding:2px 10px;border-radius:999px} .lbl.pi{background:var(--pi-soft);color:var(--pi)} .lbl.an{background:var(--an-soft);color:var(--an)} .lbl.bad{background:var(--bad-soft);color:var(--bad)}
+.lbls .btn{padding:2px 10px;font-size:.76rem}
+.thumbs{display:flex;gap:8px} .thumbs svg{width:120px;height:80px}
+.thread{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.cmt{display:flex;flex-direction:column;gap:4px} .cmt p{margin:0 0 0 32px;font-size:.92rem;color:var(--ink)}
+.cmt.reply{margin:8px 0 0 32px;padding-left:12px;border-left:2px solid var(--line)}
+.chead{display:flex;gap:8px;align-items:center;font-size:.88rem}
+.reacts{display:flex;flex-wrap:wrap;gap:6px;margin-left:32px}
+.react{font:inherit;font-size:.78rem;padding:1px 8px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer}
+.react.on{background:var(--pi-soft);border-color:var(--pi);color:var(--pi)} .react.add{border-style:dashed}
+.act{font-size:.8rem;color:var(--muted);font-family:var(--mono);padding-left:32px}
+.cform{display:flex;gap:8px} .cform input{flex:1;min-width:0;font:inherit;font-size:.9rem;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+@media (max-width:720px){.tkwrap{grid-template-columns:minmax(0,1fr)}}
+.itemcard{font-family:var(--mono);font-size:.8rem;background:var(--sunk);border-radius:8px;padding:10px 12px;overflow-wrap:anywhere;white-space:pre-wrap}
+</style>
+<style>
+/* Diagrams drawn with the visualize skill, in this guide's colours. */
+.v-bg{fill:var(--panel)}
+.v-n{fill:var(--panel);stroke:var(--ink)} .v-s{fill:var(--sunk);stroke:var(--line)}
+.v-f{fill:var(--pi-soft);stroke:var(--pi);stroke-width:1.2} .v-o{fill:var(--panel);stroke:var(--ink);stroke-dasharray:5 4}
+.v-t{fill:var(--ink);font-family:var(--body)} .v-m{fill:var(--muted);font-family:var(--body)} .v-a{fill:var(--pi);font-family:var(--body)}
+.v-e{stroke:var(--ink);stroke-width:1.2;fill:none} .v-ea{stroke:var(--pi);stroke-width:1.4;fill:none}
+.v-hm{fill:var(--ink)} .v-ham{fill:var(--pi)}
+img.shot{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+</style>
+</head>
+
+<body>
+<nav class="rail" id="rail" aria-label="Sections">
+  <div class="wrap">
+    <a href="#goal">Read</a><a href="#words">Words</a><a href="#basics">The basics</a><a href="#aloud">Reading aloud</a><a href="#steer">Steering it</a><a href="#ask">Asking</a><a href="#apps">Other apps</a><a href="#run">Running it</a><a href="#faq">Questions</a>
+  </div>
+</nav>
+
+<header class="hero" id="goal">
+  <div class="wrap stack">
+    <span class="eyebrow">User guide · Read · built on open-agent-kit</span>
+    <h1>Read your files aloud, together</h1>
+    <p class="lede">Read is where you read files with a voice beside you. Your folders and files are on the left. Open one and Read reads it aloud, sentence by sentence, with the sentence you hear highlighted. Talk to it while it reads: tell it to pause, skip, go back to a section, or explain a part more simply.</p>
+    <div class="answer">
+      <div><b>Read aloud</b>One section after another, in your voice of choice. Each file keeps its place for next time.</div>
+      <div><b>Steered by voice</b>"Pause", "next", "reread the tools section". These act at once, without waiting for a model.</div>
+      <div><b>Questions answered from the file</b>Ask what something means, or to have it explained like you are five. The answer comes from the file.</div>
+    </div>
+  </div>
+  <div class="wrap">
+    <figure class="fig"><img class="shot" src="img/reader.png" alt="Read with a file open: folders and files on the left, the file in the middle with the sentence being heard highlighted, and the conversation on the right." loading="lazy">
+      <figcaption>Reading the Orca file. The section being read has a white background and the sentence being heard is highlighted. On the right, a reading command and a question with its answer.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<section id="words">
+  <div class="wrap">
+    <div class="stack prose">
+      <span class="eyebrow">1 · Words</span>
+      <h2>The words Read uses</h2>
+      <p>Read uses a handful of words with one meaning each. They appear on the page, in its answers and in this guide.</p>
+    </div>
+    <div class="bench">
+      <div class="filters"><input id="glossSearch" type="search" placeholder="Filter the words, for example section or place" aria-label="Filter the words"></div>
+      <div class="gloss" id="gloss"></div>
+    </div>
+  </div>
+</section>
+
+<section id="basics">
+  <div class="wrap">
+    <div class="stack prose">
+      <span class="eyebrow">2 · The basics</span>
+      <h2>Your library is a folder of files</h2>
+      <p>The <b>library</b> is a folder on your machine. Its folders and files show on the left, folders first. Read opens <b>Markdown</b>, <b>plain text</b> and <b>PDF</b> files; anything else in the folder is left out. To group files, make a folder with the folder button next to <b>Files</b> and drag files onto it, or use a file's menu to rename it or move it to a folder. A file keeps its place and its conversation when it moves. Files added to the folder on disk show up too.</p>
+      <p>Each file is split into <b>sections</b>. In a Markdown file a section is a heading (H1 to H4) and the text under it. A PDF has one section per page. A plain text file is one section.</p>
+    </div>
+    <div class="rules">
+      <div class="card"><span class="kind doing">Markdown</span><h3>Split by its headings</h3><p>Numbered headings, such as "6. Interfaces", can be asked for by number.</p></div>
+      <div class="card"><span class="kind waiting">PDF</span><h3>One section per page</h3><p>The text of each page, in reading order. Its title comes from the PDF.</p></div>
+      <div class="card"><span class="kind todo">Plain text</span><h3>One section</h3><p>Read from the top, sentence by sentence.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="aloud">
+  <div class="wrap">
+    <div class="stack prose">
+      <span class="eyebrow">3 · Reading aloud</span>
+      <h2>Read reads one sentence at a time, and you follow along</h2>
+      <p>Press the play button at the top, or click a heading to read from there. Read says the heading, then each sentence under it, then moves to the next section. The sentence you are hearing is highlighted: this is the <b>read-along</b>. Code blocks are skipped, and a table is read one row at a time, each cell with its column name.</p>
+      <p>Pause, and Read keeps its <b>place</b>: the sentence you were hearing. Open the file again another day and it starts from the section you last reached.</p>
+    </div>
+    <div class="bench">
+      <div class="bench-head"><h3>Try it</h3><span class="caption">Play, pause or skip, and watch the read-along.</span></div>
+      <div class="row" id="playRow"></div>
+      <div class="tk" id="readDemo" style="margin-top:12px"></div>
+    </div>
+  </div>
+</section>
+
+<section id="steer">
+  <div class="wrap">
+    <div class="stack prose">
+      <span class="eyebrow">4 · Steering it</span>
+      <h2>Say what to read, and it moves at once</h2>
+      <p>Turn on the microphone in the message box and talk, or type. Read listens for <b>reading commands</b>: pause, carry on, repeat, next, go back, start from the top, what sections are there, and "read" or "go to" with a section's name or number. It also opens a file you name, such as "open the Orca file". These act at once, without a model, the same way every time.</p>
+      <p>When two sections fit what you said, Read asks which one, and "the first one" or "the second one" picks it. A question that names a section, such as "what does section six say about Slack?", is never a command: it goes to the agent.</p>
+    </div>
+    <figure class="fig"><div class="fig-scroll"><svg viewBox="0 0 840 330" width="100%" style="max-width:840px;height:auto" role="img" aria-label="A turn: a file to open opens it, a reading command moves the reader, both without a model; anything else goes to the agent, which answers from the open file."><defs>
+<marker id="turn-h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="v-hm"/></marker>
+<marker id="turn-ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="v-ham"/></marker>
+</defs><rect class="v-bg" x="0" y="0" width="840" height="330"/><rect x="20" y="20" width="220" height="54" rx="6" class="v-n"/><text x="32" y="45" class="v-t" font-size="13" font-weight="700" text-anchor="start">Said or typed</text><text x="32" y="62" class="v-m" font-size="11" font-weight="400" text-anchor="start">one turn</text><path d="M130,68 L130,96" class="v-e" marker-end="url(#turn-h)"/><rect x="20" y="100" width="220" height="54" rx="6" class="v-n"/><text x="32" y="125" class="v-t" font-size="13" font-weight="700" text-anchor="start">Names a file to open?</text><text x="32" y="142" class="v-m" font-size="11" font-weight="400" text-anchor="start">parseOpen</text><path d="M240,124 L300,124" class="v-e" marker-end="url(#turn-h)"/><text x="270" y="116" class="v-m" font-size="10" font-weight="700" text-anchor="middle">yes</text><rect x="304" y="100" width="230" height="54" rx="6" class="v-f"/><text x="316" y="125" class="v-a" font-size="13" font-weight="700" text-anchor="start">Opens it</text><text x="316" y="142" class="v-m" font-size="11" font-weight="400" text-anchor="start">reader-open, no model</text><path d="M130,148 L130,176" class="v-e" marker-end="url(#turn-h)"/><text x="138" y="168" class="v-m" font-size="10" font-weight="700" text-anchor="start">no</text><rect x="20" y="180" width="220" height="54" rx="6" class="v-n"/><text x="32" y="205" class="v-t" font-size="13" font-weight="700" text-anchor="start">A reading command?</text><text x="32" y="222" class="v-m" font-size="11" font-weight="400" text-anchor="start">parseCommand</text><path d="M240,204 L300,204" class="v-e" marker-end="url(#turn-h)"/><text x="270" y="196" class="v-m" font-size="10" font-weight="700" text-anchor="middle">yes</text><rect x="304" y="180" width="230" height="54" rx="6" class="v-f"/><text x="316" y="205" class="v-a" font-size="13" font-weight="700" text-anchor="start">Moves the reader</text><text x="316" y="222" class="v-m" font-size="11" font-weight="400" text-anchor="start">pause, next, go to: no model</text><path d="M130,228 L130,256" class="v-e" marker-end="url(#turn-h)"/><text x="138" y="248" class="v-m" font-size="10" font-weight="700" text-anchor="start">no</text><rect x="20" y="260" width="220" height="54" rx="6" class="v-n"/><text x="32" y="285" class="v-t" font-size="13" font-weight="700" text-anchor="start">The agent answers</text><text x="32" y="302" class="v-m" font-size="11" font-weight="400" text-anchor="start">from the open file</text><path d="M240,284 L300,284" class="v-e" marker-end="url(#turn-h)"/><rect x="304" y="260" width="230" height="54" rx="6" class="v-f"/><text x="316" y="285" class="v-a" font-size="13" font-weight="700" text-anchor="start">Spoken as it is written</text><text x="316" y="302" class="v-m" font-size="11" font-weight="400" text-anchor="start">reading waits for the reply</text><rect x="570" y="100" width="250" height="208" rx="6" class="v-s"/><text x="582" y="125" class="v-a" font-size="13" font-weight="700" text-anchor="start">Worked example</text><text x="582" y="142" class="v-m" font-size="11" font-weight="400" text-anchor="start">From the expect tests</text><text x="582" y="159" class="v-t" font-size="11" font-weight="700" text-anchor="start">&quot;read number six&quot;</text><text x="582" y="176" class="v-m" font-size="11" font-weight="400" text-anchor="start">Reading 6. Interfaces</text><text x="582" y="193" class="v-t" font-size="11" font-weight="700" text-anchor="start">&quot;jump to overview&quot;</text><text x="582" y="210" class="v-m" font-size="11" font-weight="400" text-anchor="start">Did you mean Overview under The</text><text x="582" y="227" class="v-m" font-size="11" font-weight="400" text-anchor="start">planner, or under Requirements?</text><text x="582" y="244" class="v-t" font-size="11" font-weight="700" text-anchor="start">&quot;what does section six say about</text><text x="582" y="261" class="v-t" font-size="11" font-weight="700" text-anchor="start">Slack?&quot;</text><text x="582" y="278" class="v-m" font-size="11" font-weight="400" text-anchor="start">goes to the agent</text></svg></div>
+      <figcaption>Every turn takes this path. Talking over Read stops it reading at once.</figcaption>
+    </figure>
+    <div class="bench">
+      <div class="bench-head"><h3>Try it</h3><span class="caption">Pick something to say to a file with numbered sections.</span></div>
+      <div class="row" id="sayRow"></div>
+      <div class="simlog" id="sayLog" style="margin-top:12px"></div>
+    </div>
+  </div>
+</section>
+
+<section id="ask">
+  <div class="wrap">
+    <div class="stack prose">
+      <span class="eyebrow">5 · Asking</span>
+      <h2>Ask about the file, and the answer comes from it</h2>
+      <p>Anything that is not a reading command goes to the <b>agent</b>, a model that has the open file in front of it. It answers in one to three short spoken sentences, from the file's text only. If the file does not cover it, it says so. Ask it to explain a part more simply, or like you are five, and it does that from the file too.</p>
+      <p>The answer is spoken as it is written. When the agent moves the reader, for example after "read me the part about dispatches", it says a few words first and the reading starts when it has finished speaking. Type a question while Read is reading and the answer comes as text, and the reading carries on.</p>
+    </div>
+    <div class="rules">
+      <div class="card"><h3>Each file has its own conversation</h3><p>What you said and the replies are kept with the file, and shown again when you open it.</p></div>
+      <div class="card"><h3>A long file</h3><p>The agent sees the sections around the reading, and can look the rest up without moving the reader.</p></div>
+      <div class="card"><h3>No model set up</h3><p>Reading commands still work. A question gets one line saying no model is set up.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="apps">
+  <div class="wrap">
+    <div class="stack prose">
+      <span class="eyebrow">6 · Other apps</span>
+      <h2>Other apps can open a file and move the reader</h2>
+      <p>Everything the page does is an <b>Action</b>, and the same Actions are served over MCP at <code>/mcp</code>. Another app, such as Talk, can list the files, open one, move the reader or look something up in a file. It connects once, and you approve it.</p>
+    </div>
+    <div class="tablewrap" style="margin-top:20px"><table style="min-width:0">
+      <thead><tr><th>Action</th><th>Effect</th><th>What it does</th></tr></thead>
+      <tbody id="actions"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="run">
+  <div class="wrap">
+    <div class="stack prose">
+      <span class="eyebrow">7 · Running it</span>
+      <h2>One program, one data folder</h2>
+      <p>Read runs on your machine. It needs Node 22.19 or later, a speech server with Whisper and Kokoro for voice, and a model for questions, such as Gemma on Ollama. At first start it prints a setup secret: enter it on the page to sign in.</p>
+    </div>
+    <div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+      <pre>npm install
+npm run build
+npm start            <span class="c"># http://127.0.0.1:3940</span></pre>
+      <div class="tablewrap"><table style="min-width:0">
+        <thead><tr><th>Setting</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>READ_FILES_DIR</code></td><td>The library folder</td></tr>
+          <tr><td><code>PORT</code></td><td>The port, 3940 unless set</td></tr>
+          <tr><td><code>KIT_MODEL</code></td><td>The model, such as <code>local/gemma4:26b-a4b-it-qat</code></td></tr>
+          <tr><td><code>KIT_OPENAI_BASE_URL</code></td><td>The model server, such as Ollama's <code>/v1</code></td></tr>
+          <tr><td><code>VOICESTUDIO_URL</code></td><td>The speech server</td></tr>
+          <tr><td><code>READ_VOICE</code></td><td>The voice it reads in</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="stack prose">
+      <span class="eyebrow">8 · Questions</span>
+      <h2>Questions people ask</h2>
+      <p>The answers to what people ask most. Open any of them.</p>
+    </div>
+    <div id="faqs"></div>
+  </div>
+</section>
+
+<footer><div class="wrap">Read is built on open-agent-kit, with a page made from @jaetask/toolkit.</div></footer>
+
+<script>
+(function () {
+"use strict";
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const btn = (label, on, pressed) => { const b = el("button", "btn", label); b.type = "button"; if (pressed !== undefined) b.setAttribute("aria-pressed", String(pressed)); b.addEventListener("click", on); return b; };
+
+const WORDS = [["Library", "The folder of files Read reads from, with its folders."], ["File", "One Markdown, plain text or PDF file in the library."], ["Section", "One part of a file: a heading and the text under it, or one page of a PDF."], ["Reader", "What reads the open file aloud, sentence by sentence."], ["Place", "The section the reader last reached in a file, kept for next time."], ["Read-along", "The sentence being heard, highlighted as it is spoken."], ["Reading command", "Something said or typed that moves the reader, such as next or pause. Read acts on it without a model."], ["Agent", "The model that answers questions about the open file."], ["Turn", "One thing said or typed, and the reply."]];
+function renderWords(q) {
+  const host = $("#gloss"); host.replaceChildren();
+  WORDS.filter((w) => !q || w.join(" ").toLowerCase().includes(q)).forEach(([t, d]) => { const c = el("div", "term"); c.append(el("b", "", t), el("p", "", d)); host.append(c); });
+  if (!host.children.length) host.append(el("p", "empty", "No word matches. Clear the filter to see all of them."));
+}
+$("#glossSearch").addEventListener("input", (e) => renderWords(e.target.value.trim().toLowerCase())); renderWords("");
+
+const SECTIONS = [
+  ["1. The loop", ["The loop.", "Beacon reads a message, picks a folder, and repeats until the inbox is empty."]],
+  ["2. Tools", ["Tools.", "It has two tools: a folder picker and a label maker."]],
+  ["3. Safety", ["Safety.", "It never deletes a message.", "Anything it is unsure about stays in the inbox."]],
+];
+let at = { s: 0, n: 0 }, timer = null;
+function renderRead() {
+  const pr = $("#playRow"); pr.replaceChildren(
+    btn("Back", () => { stop(); at = { s: Math.max(0, at.s - 1), n: 0 }; play(); }),
+    btn(timer ? "Pause" : "Play", () => (timer ? stop() : play()), !!timer),
+    btn("Next", () => { stop(); at = { s: Math.min(SECTIONS.length - 1, at.s + 1), n: 0 }; play(); }));
+  const host = $("#readDemo"); host.replaceChildren();
+  SECTIONS.forEach(([title, lines], i) => {
+    const sec = el("div"); sec.style.cssText = "padding:6px 10px;border-radius:8px;" + (i === at.s ? "background:var(--sunk)" : "");
+    sec.append(el("b", "", title));
+    const p = el("p"); p.style.cssText = "font-size:.92rem;margin-top:4px";
+    lines.slice(1).forEach((line, j) => { const s = el("span", "", line + " "); if (timer && i === at.s && j + 1 === at.n) s.style.background = "var(--warn-soft)"; p.append(s); });
+    sec.append(p); host.append(sec);
+  });
+}
+function tick() {
+  const lines = SECTIONS[at.s][1];
+  if (at.n + 1 < lines.length) at.n += 1; else if (at.s + 1 < SECTIONS.length) at = { s: at.s + 1, n: 0 }; else { stop(); return; }
+  renderRead();
+}
+function play() { if (timer) return; timer = setInterval(tick, 1300); renderRead(); }
+function stop() { clearInterval(timer); timer = null; renderRead(); }
+renderRead();
+
+const SAYS = [
+  ["What sections are there?", "Read says: There are 9 main parts, starting with What it is, The loop, Tools, Safety, and Memory."],
+  ["Read number six", "Reading “Interfaces”. The heading numbered 6, not the sixth section."],
+  ["Next section", "Reading “Tests”."],
+  ["Go back", "Reading “Interfaces”."],
+  ["Previous", "At the first section, Read says: That's the start."],
+  ["Jump to overview", "In a file with two Overview headings, Read asks: Did you mean Overview under The planner, or Overview under Requirements?"],
+  ["What does section six say about Slack?", "A question, so it goes to the agent, which answers from the file."],
+];
+const sr = $("#sayRow");
+SAYS.forEach(([s, r]) => sr.append(btn(s, () => { $("#sayLog").replaceChildren(el("div", "", "You: " + s), el("div", "", r)); })));
+$("#sayLog").append(el("div", "", "Pick something to say."));
+
+const ACTIONS = [
+  ["reader.file-list", "read", "The folders and files, folders first."],
+  ["reader.file-get", "read", "One file split into sections, with its place."],
+  ["reader.file-find", "read", "The sections that say most about something, without moving the reader."],
+  ["reader.folder-create", "write", "Make a folder to group files in."],
+  ["reader.entry-move", "write", "Move or rename a file or folder, keeping its place and conversation."],
+  ["reader.folder-remove", "write", "Remove an empty folder."],
+  ["reader.reader-state", "read", "The open file, its sections, and where the reading is."],
+  ["reader.reader-open", "write", "Open a file by its path or part of its title, and read it if asked."],
+  ["reader.reader-goto", "write", "Read from a section, by number, title or place in the list."],
+  ["reader.reader-next", "write", "Read the next section."],
+  ["reader.reader-previous", "write", "Read the section before."],
+  ["reader.reader-pause", "write", "Pause, keeping the place."],
+  ["reader.reader-resume", "write", "Carry on from the sentence where it paused."],
+  ["reader.reader-close", "write", "Close the file."],
+  ["reader.chat-turns", "read", "The conversation about a file."],
+];
+const tb = $("#actions");
+ACTIONS.forEach(([n, fx, d]) => { const tr = el("tr"); const a = el("td"); a.append(el("code", "", n)); const b = el("td"); b.append(el("span", "fx " + fx, fx)); tr.append(a, b, el("td", "", d)); tb.append(tr); });
+
+const FAQ = [
+  ["Does anything leave my machine?", "Not with a local speech server and a local model. Read sends speech to the speech server you set, and questions to the model you set."],
+  ["Why does it say the heading first?", "So you know where you are by ear. A section starts with its heading, then the text under it."],
+  ["Can I read a scanned PDF?", "Only if the PDF has text in it. Read reads the text of each page; it does not read pictures of text."],
+  ["What if it reads over its own answer?", "It does not: when the agent moves the reader, the reading waits until the answer has been spoken."],
+  ["Why didn't my question move the reader?", "A question is answered in words and leaves the reader where it is. Say read, go to or next to move it."],
+  ["Where are my places and conversations kept?", "In the data folder, in one SQLite file, with the agent's conversations beside it."],
+];
+const host = $("#faqs");
+FAQ.forEach(([q, a], i) => { const d = el("details", "prob"); if (i === 0) d.open = true; const s = el("summary", "", q); const b = el("div", "body"); b.style.gridTemplateColumns = "minmax(0,1fr)"; b.append(el("div", "answer2", a)); d.append(s, b); host.append(d); });
+
+const links = [...document.querySelectorAll("#rail a")];
+const secs = links.map((a) => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+function onScroll() { let c = secs[0]; const y = window.scrollY + 120; secs.forEach((s) => { if (s.offsetTop <= y) c = s; }); links.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + c.id)); }
+window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>
