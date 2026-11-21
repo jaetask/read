@@ -1,14 +1,16 @@
 import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
-const at = (path) => new URL(path, import.meta.url).pathname;
+const at = (path) => fileURLToPath(new URL(path, import.meta.url));
 
 await build({
-  entryPoints: [at("../page/main.tsx")],
+  entryPoints: { app: at("../page/main.tsx"), fonts: at("../page/fonts.css") },
   outdir: at("../public"),
-  entryNames: "app",
   assetNames: "[name]",
   bundle: true,
+  splitting: true,
+  chunkNames: "chunk-[hash]",
   minify: true,
   format: "esm",
   target: "es2022",
@@ -18,8 +20,8 @@ await build({
   logLevel: "warning",
 });
 execFileSync(
-  "npx",
-  ["@tailwindcss/cli", "-i", at("../page/app.css"), "-o", at("../public/styles.css"), "--minify"],
+  at("../node_modules/.bin/tailwindcss"),
+  ["-i", at("../page/app.css"), "-o", at("../public/app.css"), "--minify"],
   { stdio: ["ignore", "ignore", "inherit"] },
 );
-console.log("built public/app.js, public/app.css and public/styles.css");
+console.log("built public/app.js, public/fonts.css and public/app.css");
