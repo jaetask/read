@@ -1,0 +1,62 @@
+import type { SpeakOptions, TtsProvider } from "../tts.js";
+
+export type OpenAiSpeechOptions = {
+  baseUrl: string;
+  model: string;
+  voice?: string | undefined;
+  apiKey?: string | undefined;
+  sampleRate?: number | undefined;
+  name?: string | undefined;
+  fetch?: typeof fetch;
+};
+
+export async function* streamBody(res: Response): AsyncIterable<Uint8Array> {
+  if (!res.body) return;
+  for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) yield chunk;
+}
+
+export async function failure(provider: string, res: Response): Promise<Error> {
+  return new Error(
+    `${provider} answered ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`,
+  );
+}
+
+export function openaiSpeech(options: OpenAiSpeechOptions): TtsProvider {
+  const name = options.name ?? "openai-speech";
+  return {
+    name,
+    sampleRate: options.sampleRate ?? 24000,
+    async *synthesize(text: string, speak: SpeakOptions = {}) {
+      const res = await (options.fetch ?? fetch)(
+        `${options.baseUrl.replace(/\/$/, "")}/v1/audio/speech`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            ...(options.apiKey ? { authorization: `Bearer ${options.apiKey}` } : {}),
+          },
+          body: JSON.stringify({
+            model: options.model,
+            voice: speak.voice ?? options.voice ?? "af_heart",
+            input: text,
+            response_format: "pcm",
+            speed: speak.speed ?? 1,
+          }),
+          signal: speak.signal ?? null,
+        },
+      );
+      if (!res.ok) throw await failure(name, res);
+      yield* streamBody(res);
+    },
+  };
+}
+
+export function kokoro(options: Partial<OpenAiSpeechOptions> = {}): TtsProvider {
+  return openaiSpeech({
+    baseUrl: "http://127.0.0.1:3900",
+    model: "mlx-audio",
+    voice: "af_heart",
+    name: "kokoro",
+    ...options,
+  });
+}

@@ -1,0 +1,24 @@
+commands:
+  typecheck: "npm run typecheck"
+  lint: "npm run lint"
+  format: "npm run format:check"
+  test: "npm run test"
+  verify: "npm run expect"
+checks:
+  gitignore: on
+  no-secrets: on
+  lockfile: on
+  pre-commit: on
+  tests-before-merge: on
+  strict-types: on
+  lint: on
+  format: on
+  ast-grep: off
+  yaml: on
+  verify: on
+  agents-md: on
+  ci: on
+  no-push-main: on
+  auto-pr: on
+  no-comments: on
+dismissed: []

@@ -1,0 +1,62 @@
+{
+  "name": "read",
+  "version": "0.1.0",
+  "description": "Read files aloud together: folders and files on the left, the file in the middle, and a voice chat that reads it and can be steered.",
+  "author": "jaetask",
+  "license": "MIT",
+  "private": true,
+  "homepage": "https://github.com/jaetask/read#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaetask/read.git"
+  },
+  "bugs": "https://github.com/jaetask/read/issues",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && npm run build:page",
+    "build:page": "node scripts/build-page.mjs",
+    "typecheck": "tsc --noEmit && tsc -p page",
+    "test": "tsx --test src/*.test.ts src/**/*.test.ts",
+    "expect": "tsx expect/snap.ts",
+    "lint": "biome lint . && npm run check:docs && npm run check:toolkit && npm run check:comments",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "prepare": "git config core.hooksPath .agents/guardrails/hooks || true",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check:toolkit": "toolkit-guard page",
+    "check:comments": "node .agents/guardrails/check-comments.mjs",
+    "start": "node dist/main.js",
+    "dev": "npm run build:page && tsx src/main.ts"
+  },
+  "dependencies": {
+    "@earendil-works/chord": "1.5.2",
+    "@earendil-works/pi-ai": "1.5.2",
+    "@earendil-works/pi-durable": "1.5.2",
+    "@jaetask/open-agent-kit": "0.2.1",
+    "@modelcontextprotocol/client": "2.4.0",
+    "@modelcontextprotocol/server": "2.4.0",
+    "unpdf": "2.1.0",
+    "ws": "8.21.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.5",
+    "@fontsource-variable/inter": "5.3.0",
+    "@jaetask/snap": "0.1.0",
+    "@jaetask/toolkit": "0.3.2",
+    "@tailwindcss/cli": "4.3.5",
+    "@types/node": "22.18.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.2.3",
+    "@types/ws": "8.18.1",
+    "esbuild": "0.28.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.5",
+    "tsx": "4.20.5",
+    "typescript": "5.9.3"
+  }
+}
