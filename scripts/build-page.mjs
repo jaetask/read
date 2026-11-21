@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
@@ -25,6 +25,7 @@ execFileSync(
   ["-i", at("../page/app.css"), "-o", at("../public/app.css"), "--minify"],
   { stdio: ["ignore", "ignore", "inherit"] },
 );
+copyFileSync(at("../page/capture-worklet.js"), at("../public/capture-worklet.js"));
 const stamp = Date.now().toString(36);
 writeFileSync(
   at("../public/index.html"),
