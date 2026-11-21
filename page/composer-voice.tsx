@@ -38,7 +38,15 @@ function Tip({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-export function ComposerVoice({ state, onCall }: { state: VoiceState; onCall: boolean }) {
+export function ComposerVoice({
+  state,
+  onCall,
+  reading,
+}: {
+  state: VoiceState;
+  onCall: boolean;
+  reading: boolean;
+}) {
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat && !typing(e.target)) {
@@ -65,17 +73,16 @@ export function ComposerVoice({ state, onCall }: { state: VoiceState; onCall: bo
   }, []);
 
   const recording = state === "recording";
-  const speaking = state === "speaking" || state === "busy";
+  const speaking = state === "speaking" || state === "busy" || (reading && state === "idle");
+  const line = reading && state === "idle" ? "Reading · Esc to stop" : STATE[state];
   return (
     <TooltipProvider>
       <div className="flex items-center gap-1">
         <span className="sr-only" aria-live="polite">
-          {STATE[state]}
+          {line}
         </span>
-        {state !== "idle" && (
-          <span className="hidden pr-1 text-xs text-muted-foreground sm:inline">
-            {STATE[state]}
-          </span>
+        {line && (
+          <span className="hidden pr-1 text-xs text-muted-foreground sm:inline">{line}</span>
         )}
         {speaking && !onCall ? (
           <Tip label="Stop talking (Esc)">
