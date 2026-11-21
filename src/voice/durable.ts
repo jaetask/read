@@ -39,12 +39,14 @@ export function durableBrain(
         const message = generation.message as
           | { content?: { type: string; text?: string }[] }
           | undefined;
-        if (generation.attempt !== attempt || !textOf(message?.content).startsWith(streamed)) {
+        const full = textOf(message?.content);
+        if (generation.attempt !== attempt || !full.startsWith(streamed)) {
           attempt = generation.attempt;
+          if (streamed.startsWith(full)) return;
+          hold.restart();
           streamed = "";
         }
         if (message?.content?.some((c) => c.type === "toolCall")) hold.tool();
-        const full = textOf(message?.content);
         if (full.length > streamed.length) {
           push(hold.text(full.slice(streamed.length)));
           streamed = full;
@@ -64,8 +66,11 @@ export function durableBrain(
             (answer?.model?.[0] as { content?: { type: string; text?: string }[] } | undefined)
               ?.content,
           );
-          if (full.startsWith(streamed) && full.length > streamed.length)
-            push(hold.text(full.slice(streamed.length)));
+          if (!full.startsWith(streamed)) {
+            hold.restart();
+            streamed = "";
+          }
+          if (full.length > streamed.length) push(hold.text(full.slice(streamed.length)));
           push(hold.end());
         } else if (!signal.aborted)
           push(`I couldn't answer that (${(s as { reason?: string }).reason ?? s.status}).`);
