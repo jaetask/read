@@ -43,7 +43,22 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function positions(db: DatabaseSync) {
   db.exec("CREATE TABLE IF NOT EXISTS positions (path TEXT PRIMARY KEY, idx INTEGER NOT NULL)");
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS reader_open (id INTEGER PRIMARY KEY CHECK (id = 1), path TEXT)",
+  );
   return {
+    open: (): string | null =>
+      (
+        db.prepare("SELECT path FROM reader_open WHERE id = 1").get() as
+          | { path: string | null }
+          | undefined
+      )?.path ?? null,
+    setOpen: (path: string | null) =>
+      void db
+        .prepare(
+          "INSERT INTO reader_open (id, path) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET path = excluded.path",
+        )
+        .run(path),
     get: (path: string): number =>
       (
         db.prepare("SELECT idx FROM positions WHERE path = ?").get(path) as
@@ -87,8 +102,10 @@ export class Reader {
     private readonly voice: VoiceSettings,
   ) {}
 
-  keepPlaces(store: Positions) {
+  async keepPlaces(store: Positions) {
     this.store = store;
+    const last = store.open();
+    if (last) await this.open(last).catch(() => undefined);
   }
 
   listen(listener: Listener): () => void {
@@ -153,6 +170,7 @@ export class Reader {
     await this.stop();
     const saved = Math.min(this.positionOf(path), Math.max(0, doc.sections.length - 1));
     Object.assign(this.state, { path, index: play ? 0 : saved, sentence: 0, playing: false });
+    this.store?.setOpen(path);
     this.announce();
     if (play) await this.read(0, 0);
     return doc;
@@ -163,6 +181,7 @@ export class Reader {
     const open = this.state.path;
     if (open && (open === from || open.startsWith(`${from}/`))) {
       this.state.path = to + open.slice(from.length);
+      this.store?.setOpen(this.state.path);
       this.announce();
     }
   }
@@ -170,6 +189,7 @@ export class Reader {
   async close() {
     await this.stop();
     Object.assign(this.state, { path: null, index: 0, sentence: 0, playing: false });
+    this.store?.setOpen(null);
     this.announce();
   }
 

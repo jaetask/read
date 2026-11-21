@@ -97,7 +97,7 @@ export async function createRead(options: ReadOptions): Promise<Read> {
     ...(options.connect ? { connect: options.connect } : {}),
     ...(options.page ? { page: options.page } : {}),
   });
-  reader.keepPlaces(positions(app.db));
+  await reader.keepPlaces(positions(app.db));
   const chat = turnsOf(app.db);
 
   const choice = await modelsFromEnv(env);
