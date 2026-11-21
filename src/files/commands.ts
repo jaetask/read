@@ -110,9 +110,29 @@ export function matchSection(query: string, doc: Document): Found {
   if (!scored.length) return {};
   scored.sort((a, b) => b[0] - a[0] || b[1] - a[1]);
   const [best, second] = scored as [[number, number], ...[number, number][]];
-  if (second && second[0] >= best[0] - 0.15 && second[0] > 0.6)
+  if (second && second[0] >= best[0] - 0.15 && second[0] > 0.6) {
+    const order = (k: number) => inOrder(query, doc.sections[k]?.title ?? "");
+    const [a, b] = [order(best[1]), order(second[1])];
+    if (a !== b) return { index: a > b ? best[1] : second[1] };
     return { ambiguous: [best[1], second[1]] };
+  }
   return best[0] >= 0.5 ? { index: best[1] } : {};
+}
+
+const pairs = (text: string): Set<string> => {
+  const words = norm(text.replace(NUMBERED, ""), true);
+  return new Set(words.slice(1).map((w, i) => `${words[i]} ${w}`));
+};
+
+function inOrder(query: string, title: string): number {
+  const q = pairs(query);
+  return [...pairs(title)].filter((p) => q.has(p)).length;
+}
+
+export function pickChoice(text: string, doc: Document, choices: number[]): number | undefined {
+  const scored = choices.map((k) => [inOrder(text, doc.sections[k]?.title ?? ""), k] as const);
+  const [first, second] = [...scored].sort((x, y) => y[0] - x[0]);
+  return first && first[0] > 0 && (!second || first[0] > second[0]) ? first[1] : undefined;
 }
 
 export function findSection(want: string, doc: Document): Found {

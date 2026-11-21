@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CHOICE, findSection, matchFile, parseApp, parseCommand, parseOpen } from "./commands.js";
+import {
+  CHOICE,
+  findSection,
+  matchFile,
+  parseApp,
+  parseCommand,
+  parseOpen,
+  pickChoice,
+} from "./commands.js";
 import { library } from "./library.js";
 import { type Document, type Section, spokenParts, splitSections } from "./sections.js";
 
@@ -238,4 +246,28 @@ test("the conversation pane and the call are steered by voice", () => {
   assert.equal(view("hang up"), "end_call");
   assert.equal(view("what does the trajectory of the project look like in this file?"), undefined);
   assert.equal(view("read section stack and size"), undefined);
+});
+
+test("two titles with the same words are told apart by their order", () => {
+  const doc = make(
+    [
+      "3. Every command (v1)",
+      "Commands the client sends to the agent",
+      "Commands the agent sends to the client",
+      "Stop reasons",
+    ].map((title) => ({ title, level: 3, text: "" })),
+  );
+  assert.deepEqual(
+    parseCommand("Can you read the commands the client sends to the agent section?", doc),
+    {
+      cmd: "goto",
+      index: 1,
+    },
+  );
+  assert.deepEqual(parseCommand("read the commands the agent sends to the client", doc), {
+    cmd: "goto",
+    index: 2,
+  });
+  assert.equal(pickChoice("I meant commands the client sends to the agent.", doc, [2, 1]), 1);
+  assert.equal(pickChoice("the second one", doc, [2, 1]), undefined);
 });

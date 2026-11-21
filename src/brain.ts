@@ -7,6 +7,7 @@ import {
   parseApp,
   parseCommand,
   parseOpen,
+  pickChoice,
   type ReadingCommand,
 } from "./files/commands.js";
 import type { Document } from "./files/sections.js";
@@ -178,9 +179,10 @@ export function readBrain(options: ReadBrainOptions): ReadBrain {
       return true;
     }
     if (!doc) return false;
-    if (state.choices && CHOICE.test(text)) {
+    const named = state.choices ? pickChoice(text, doc, state.choices) : undefined;
+    if (state.choices && (named !== undefined || CHOICE.test(text))) {
       const second = /\b(second|2nd|two|latter)\b/i.test(text);
-      const k = state.choices[second ? 1 : 0];
+      const k = named ?? state.choices[second ? 1 : 0];
       state.choices = undefined;
       if (k !== undefined) {
         const note = `Reading “${plain(doc.sections[k]?.title ?? "")}”.`;
