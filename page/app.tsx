@@ -1,17 +1,13 @@
 import {
   AppShell,
-  CenteredPage,
   EmptyLine,
   IconAction,
   LinkProvider,
   type LinkComponent,
   WorkPage,
 } from "@jaetask/toolkit/suite";
-import { IconArrowLeft } from "@tabler/icons-react";
-import { Button } from "@jaetask/toolkit/ui/button";
-import { Input } from "@jaetask/toolkit/ui/input";
-import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { api, call, type Doc, type Entry, read, type Turn, whenSignedOut } from "./api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { call, type Doc, type Entry, read, type Turn } from "./api";
 import { Chat } from "./chat";
 import { Icon } from "./icons";
 import { fileHref, Library } from "./library";
@@ -57,49 +53,6 @@ const toLines = (turns: Turn[]): Line[] =>
     { id: `t${t.id}p`, from: "person" as const, text: t.said },
     ...(t.reply ? [{ id: `t${t.id}r`, from: "reader" as const, text: t.reply }] : []),
   ]);
-
-function SignIn({ onSignedIn }: { onSignedIn: () => void }) {
-  const [secret, setSecret] = useState("");
-  const [error, setError] = useState("");
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    const answer = await api<{ signedIn: boolean; error?: string }>("/api/session", {
-      method: "POST",
-      body: { secret },
-    });
-    setSecret("");
-    setError(answer.signedIn ? "" : (answer.error ?? "Could not sign in."));
-    if (answer.signedIn) onSignedIn();
-  };
-  return (
-    <div className="tk-root">
-      <CenteredPage
-        title="Sign in to Read"
-        line="Enter the setup secret Read printed when it first started."
-      >
-        <form className="read-sign-in" onSubmit={submit}>
-          <Input
-            type="password"
-            aria-label="Setup secret"
-            autoComplete="current-password"
-            placeholder="Setup secret"
-            value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-            required
-          />
-          <Button type="submit" size="icon" aria-label="Sign in" title="Sign in">
-            <Icon name="arrow-right" />
-          </Button>
-        </form>
-        {error && (
-          <p className="read-error" role="alert">
-            {error}
-          </p>
-        )}
-      </CenteredPage>
-    </div>
-  );
-}
 
 function Controls({ doc, playing, index }: { doc: Doc; playing: boolean; index: number }) {
   const act = (action: string) => {
@@ -179,38 +132,19 @@ function Home({ tree }: { tree: Entry[] }) {
   );
 }
 
-function SettingsPage({ onSignOut }: { onSignOut: () => void }) {
-  return (
-    <WorkPage
-      title="This browser"
-      help="You are signed in with the setup secret. Signing out ends the session in this browser only."
-      action={<IconAction label="Sign out" icon={<Icon name="logout" />} onClick={onSignOut} />}
-    >
-      <EmptyLine>Signed in. A session lasts 30 days.</EmptyLine>
-    </WorkPage>
-  );
-}
-
 function App() {
   const route = useHashPath();
-  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [tree, setTree] = useState<Entry[]>([]);
   const [doc, setDoc] = useState<Doc | null>(null);
   const [problem, setProblem] = useState("");
   const voice = useVoice();
   const wanted = fileOf(route);
 
-  useEffect(() => {
-    whenSignedOut(() => setSignedIn(false));
-    void api<{ signedIn: boolean }>("/api/session").then((s) => setSignedIn(s.signedIn));
-  }, []);
-
   const refreshTree = useCallback(async () => {
     setTree((await read<Entry[]>("file-list")) ?? []);
   }, []);
 
   useEffect(() => {
-    if (!signedIn) return;
     connect();
     void refreshTree();
     const onFocus = () => void refreshTree();
@@ -224,14 +158,14 @@ function App() {
       clearInterval(every);
       disconnect();
     };
-  }, [signedIn, refreshTree]);
+  }, [refreshTree]);
 
   const asked = useRef<string | null>(null);
   useEffect(() => {
-    if (!signedIn || !voice.connected || !wanted || asked.current === wanted) return;
+    if (!voice.connected || !wanted || asked.current === wanted) return;
     asked.current = wanted;
     if (wanted !== voice.path) void call("reader-open", { file: wanted });
-  }, [signedIn, voice.connected, wanted, voice.path]);
+  }, [voice.connected, wanted, voice.path]);
 
   const followed = useRef(false);
   useEffect(() => {
@@ -265,29 +199,8 @@ function App() {
     };
   }, [voice.path]);
 
-  if (signedIn === null) return null;
-  if (!signedIn) return <SignIn onSignedIn={() => setSignedIn(true)} />;
-
-  const signOut = async () => {
-    await api("/api/session", { method: "DELETE" });
-    setSignedIn(false);
-  };
   const shown = doc && doc.path === voice.path ? doc : null;
-  const page = route === "/settings" ? "settings" : shown && wanted ? "file" : "home";
-
-  if (page === "settings")
-    return (
-      <AppShell
-        app={{ name: "Read", href: "/" }}
-        bar={false}
-        nav={[
-          { href: "/", label: "Back to Read", icon: <IconArrowLeft size={16} aria-hidden /> },
-          { href: "/settings", label: "This browser", icon: <Icon name="logout" />, current: true },
-        ]}
-      >
-        <SettingsPage onSignOut={signOut} />
-      </AppShell>
-    );
+  const page = shown && wanted ? "file" : "home";
 
   return (
     <AppShell
@@ -304,7 +217,6 @@ function App() {
           />
         )
       }
-      settingsHref="/settings"
     >
       <div className="read-split">
         <div className="read-main">

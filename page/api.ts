@@ -35,11 +35,6 @@ export type Outcome<T> =
       reason: { message: string };
     };
 
-let onSignedOut = () => {};
-export const whenSignedOut = (f: () => void) => {
-  onSignedOut = f;
-};
-
 export async function api<T>(
   path: string,
   init: { method?: string; body?: unknown } = {},
@@ -50,7 +45,6 @@ export async function api<T>(
     headers: { "x-kit-request": "1", "content-type": "application/json" },
     ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
   });
-  if (response.status === 401 && path !== "/api/session") onSignedOut();
   return response.json() as Promise<T>;
 }
 

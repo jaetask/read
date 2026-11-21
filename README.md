@@ -37,7 +37,7 @@ npm run build
 npm start
 ```
 
-Read runs at http://127.0.0.1:3940 and keeps its data in `data/`. At first start it prints a setup secret once: enter it on the page to sign in.
+Read runs at http://127.0.0.1:3940 and keeps its data in `data/`. It runs on this machine only and opens without signing in: it listens on a loopback address and refuses any other.
 
 It needs a speech server with Whisper and Kokoro for voice (an OpenAI-compatible `/v1/audio` API and Kokoro's `/ws/tts` websocket), and a model for questions.
 
@@ -46,7 +46,6 @@ It needs a speech server with Whisper and Kokoro for voice (an OpenAI-compatible
 | `PORT`, `HOST`                            | `3940`, `127.0.0.1`           | Where Read listens                                                              |
 | `DATA_DIR`                                | `data`                        | The App database and the agent's conversations                                  |
 | `READ_FILES_DIR`                          | `DATA_DIR/files`              | The library                                                                     |
-| `KIT_SETUP_SECRET`                        | made at first start           | The secret for signing in                                                       |
 | `KIT_MODEL`                               | none                          | The model, as `provider/model`; `local/<model>` with `KIT_OPENAI_BASE_URL`      |
 | `KIT_OPENAI_BASE_URL`                     | none                          | An OpenAI-compatible model server, such as Ollama's `http://127.0.0.1:11434/v1` |
 | `VOICESTUDIO_URL`                         | `http://127.0.0.1:3900`       | The speech server                                                               |
