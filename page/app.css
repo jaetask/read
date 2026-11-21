@@ -23,11 +23,11 @@ body {
   flex: 1;
   min-width: 0;
   min-height: 0;
-  background: var(--tk-panel);
+  background: var(--tk-page);
 }
 
 .read-current {
-  background: var(--tk-tint-soft);
+  background: var(--tk-card);
 }
 
 .prose .tbl {
@@ -67,7 +67,7 @@ body {
   position: absolute;
   top: -6px;
   bottom: -10px;
-  border-left: 1px dashed var(--tk-line);
+  border-left: 1px dashed var(--tk-side-line);
 }
 
 .tj-turn span {
@@ -131,7 +131,7 @@ body {
 
 .tj-tag.system {
   color: var(--tk-muted);
-  background: var(--tk-tint-soft);
+  background: var(--tk-side);
 }
 
 .tj-tag.user {

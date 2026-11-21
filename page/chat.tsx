@@ -106,17 +106,14 @@ export function ChatPane({
             )}
             <div ref={end} />
           </div>
-          <form
-            className="mx-4 mb-3 rounded-2xl border border-border bg-background p-3"
-            onSubmit={send}
-          >
+          <form className="mx-4 mb-3 rounded-2xl border border-border bg-card p-3" onSubmit={send}>
             <Textarea
               aria-label={`Message ${AGENT}`}
               value={text}
               rows={3}
               maxLength={4000}
               placeholder={`Message ${AGENT}…`}
-              className="min-h-16 resize-none border-0 p-1 shadow-none"
+              className="min-h-16 resize-none border-0 bg-transparent p-1 shadow-none"
               onChange={(e) => setText(e.target.value)}
               onKeyDown={onKey}
             />
