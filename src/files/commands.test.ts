@@ -207,3 +207,17 @@ test("an H4 heading is a jump target, and two with one name are told apart by pa
   assert.ok(CHOICE.test("the second one"));
   assert.ok(!CHOICE.test("what does docker do"));
 });
+
+test("a title that ends in it, this or that is still a title", () => {
+  const doc = make(
+    ["Intro", "Stack and size", "Why people like it", "1. The agent loop"].map((title) => ({
+      title,
+      level: 2,
+      text: "",
+    })),
+  );
+  assert.deepEqual(parseCommand("read section why people like it", doc), { cmd: "goto", index: 2 });
+  assert.deepEqual(parseCommand("go to why people like it", doc), { cmd: "goto", index: 2 });
+  assert.deepEqual(parseCommand("read it again", doc), { cmd: "repeat" });
+  assert.deepEqual(parseCommand("read that again", doc), { cmd: "repeat" });
+});

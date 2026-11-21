@@ -195,6 +195,7 @@ const GLUED =
   /\b(reread|re-read|read|replay|jump|go|skip)(?=(?:how|the|to|from|back|what|on)\w*)/gi;
 const NOT_A_TITLE =
   /^\W*(back|on|ahead|again|over|next|previous|top|beginning|start|there|one|a bit|please)(\s+(please|again|a bit|one))?\W*$/i;
+const PRONOUN = /^\W*(?:(?:all|the rest) of )?(?:that|this|it)(?: (?:one|bit|part|section))?\W*$/i;
 const REREAD =
   /\b(?:reread|re-read|read|repeat|replay)\s+(?:the\s+)?(.+?)\s+(?:again|section|part|bit)\W*$/i;
 
@@ -212,7 +213,7 @@ export function parseCommand(text: string, doc: Document | undefined): ReadingCo
   if (doc) {
     for (const rx of [REREAD, GOTO]) {
       const target = t.match(rx)?.[1];
-      if (!target || /\b(that|this|it)\b\W*$/i.test(target) || NOT_A_TITLE.test(target)) continue;
+      if (!target || PRONOUN.test(target) || NOT_A_TITLE.test(target)) continue;
       const hit = matchSection(target, doc);
       if (hit.index !== undefined) return { cmd: "goto", index: hit.index };
       if (hit.ambiguous) return { cmd: "ambiguous", options: hit.ambiguous };
