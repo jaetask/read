@@ -89,7 +89,14 @@ export function ChatPane({
         <>
           <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 py-6">
             {voice.lines.length ? (
-              voice.lines.map((line) => <Message key={line.id} line={line} />)
+              <>
+                {voice.lines.map((line) => (
+                  <Message key={line.id} line={line} />
+                ))}
+                {voice.lines.at(-1)?.from === "person" && (
+                  <p className="m-0 text-sm text-muted-foreground">Thinking</p>
+                )}
+              </>
             ) : (
               <p className="m-auto max-w-sm text-center text-sm text-muted-foreground">
                 {file
@@ -114,7 +121,7 @@ export function ChatPane({
               onKeyDown={onKey}
             />
             <div className="flex items-center justify-end gap-1 pt-1">
-              <ComposerVoice state={voice.state} onCall={voice.onCall} />
+              <ComposerVoice state={voice.state} onCall={voice.onCall} reading={voice.playing} />
               <Button
                 type="submit"
                 size="icon"

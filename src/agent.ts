@@ -33,6 +33,7 @@ export function fileContext(doc: Document, index: number, reading: boolean): str
   const at = sections[Math.min(index, sections.length - 1)]?.title ?? "";
   return [
     `You and the person are reading the file "${title}" together; the reading is at the section "${at}"${reading ? " and is reading aloud" : ""}.`,
+    `"It", "this" and "that" mean the section being read, "${at}", unless the person names something else; explain that section, not the whole file.`,
     "Answer a question about the file in one to three short spoken sentences, using only the file text below. If the file doesn't cover it, say plainly that the file doesn't cover that; don't guess or add outside knowledge.",
     "When asked to explain something more simply, or in another way, do it from the file text.",
     "Don't offer to continue: the person will say carry on when ready.",
