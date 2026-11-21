@@ -339,3 +339,26 @@ export function parseApp(text: string): AppCommand | undefined {
     return { cmd: "view", view: "chat" };
   return undefined;
 }
+
+export type LibraryCommand =
+  | { cmd: "list_folders" }
+  | { cmd: "list_folder"; folder: string }
+  | { cmd: "make_folder"; name: string };
+
+const LIST_FOLDERS =
+  /\b(what|which) folders\b|\blist (the |my |all |our )?folders\b|\bfolders (have we got|do we have|are there|in (the|our|my) library)\b/i;
+const IN_FOLDER =
+  /\b(?:what(?:'s| is| files are)?|which files are|list(?: the)?(?: files)?|show(?: me)?(?: the files)?)\s+(?:in|inside)\s+(?:the\s+)?(.+?)\s+folder\b/i;
+const MAKE_FOLDER =
+  /\b(?:make|create|add|new)\s+(?:a\s+)?(?:new\s+)?folder\s+(?:called|named)\s+["“]?(.+?)["”]?\W*$/i;
+
+export function parseLibrary(text: string): LibraryCommand | undefined {
+  const t = (text ?? "").trim();
+  if (!t) return undefined;
+  const make = t.match(MAKE_FOLDER)?.[1];
+  if (make) return { cmd: "make_folder", name: make.trim() };
+  const inside = t.match(IN_FOLDER)?.[1];
+  if (inside) return { cmd: "list_folder", folder: inside.trim() };
+  if (LIST_FOLDERS.test(t)) return { cmd: "list_folders" };
+  return undefined;
+}

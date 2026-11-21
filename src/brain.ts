@@ -6,10 +6,12 @@ import {
   NUMBERED,
   parseApp,
   parseCommand,
+  parseLibrary,
   parseOpen,
   pickChoice,
   type ReadingCommand,
 } from "./files/commands.js";
+import type { Entry } from "./files/library.js";
 import type { Document } from "./files/sections.js";
 import { readerDomain } from "./reader/domain.js";
 import type { Reader } from "./reader/reader.js";
@@ -78,6 +80,44 @@ export function readBrain(options: ReadBrainOptions): ReadBrain {
     return `Just one part: ${heads[0] ?? doc.title}.`;
   }
 
+  async function library(asked: NonNullable<ReturnType<typeof parseLibrary>>): Promise<string> {
+    const tree = reader.library.tree();
+    const folders = (entries: Entry[]): Entry[] =>
+      entries.flatMap((e) => (e.kind === "folder" ? [e, ...folders(e.children)] : []));
+    const names = (list: string[]) =>
+      list.length > 1 ? `${list.slice(0, -1).join(", ")} and ${list.at(-1)}` : (list[0] ?? "");
+    if (asked.cmd === "make_folder") {
+      const o = await call("folder-create", { path: asked.name });
+      return o.state === "succeeded"
+        ? `I've made the folder ${asked.name}.`
+        : `I couldn't make that folder: ${"reason" in o ? o.reason.message : o.state}`;
+    }
+    const all = folders(tree);
+    if (asked.cmd === "list_folders") {
+      await call("file-list");
+      if (!all.length)
+        return "There are no folders yet. All the files are at the top of the library.";
+      return `There ${all.length === 1 ? "is one folder" : `are ${all.length} folders`}: ${names(all.map((f) => f.name))}.`;
+    }
+    const want = asked.folder.toLowerCase();
+    const folder =
+      all.find((f) => f.name.toLowerCase() === want) ??
+      all.find((f) => f.name.toLowerCase().includes(want) || want.includes(f.name.toLowerCase()));
+    if (!folder || folder.kind !== "folder") return `There's no folder called ${asked.folder}.`;
+    await call("file-list");
+    const files = folder.children
+      .filter((e) => e.kind === "file")
+      .map((e) => (e.kind === "file" ? e.title : ""));
+    const inner = folder.children.filter((e) => e.kind === "folder").map((e) => e.name);
+    if (!files.length && !inner.length) return `The ${folder.name} folder is empty.`;
+    return [
+      files.length ? `The ${folder.name} folder has ${names(files)}.` : "",
+      inner.length ? `It also holds the folders ${names(inner)}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
   async function command(
     doc: Document,
     cmd: ReadingCommand,
@@ -118,6 +158,13 @@ export function readBrain(options: ReadBrainOptions): ReadBrain {
   }
 
   async function* deterministic(text: string): AsyncGenerator<string, boolean> {
+    const asked = parseLibrary(text);
+    if (asked) {
+      const say = await library(asked);
+      record(say, "command", `library: ${asked.cmd.replace("_", " ")}`);
+      yield say;
+      return true;
+    }
     const app = parseApp(text);
     if (app?.cmd === "view") {
       await call("view-show", { view: app.view });

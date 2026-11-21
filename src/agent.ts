@@ -14,6 +14,7 @@ import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite
 import { contract } from "@jaetask/open-agent-kit";
 import type { Calls } from "@jaetask/open-agent-kit";
 import { tracing } from "./chat/trace.js";
+import type { Entry } from "./files/library.js";
 import { type Document, outline } from "./files/sections.js";
 import { readerDomain } from "./reader/domain.js";
 import type { Reader } from "./reader/reader.js";
@@ -34,7 +35,7 @@ export function fileContext(doc: Document, index: number, reading: boolean): str
   return [
     `You and the person are reading the file "${title}" together; the reading is at the section "${at}"${reading ? " and is reading aloud" : ""}.`,
     `"It", "this" and "that" mean the section being read, "${at}", unless the person names something else; explain that section, not the whole file.`,
-    "Answer a question about the file in one to three short spoken sentences, using only the file text below. If the file doesn't cover it, say plainly that the file doesn't cover that; don't guess or add outside knowledge.",
+    "Answer a question about the file in one to three short spoken sentences, using only the file text below. Questions about the library, its folders and files, are answered from the library list above, not from the file. If the file doesn't cover it, say plainly that the file doesn't cover that; don't guess or add outside knowledge.",
     "When asked to explain something more simply, or in another way, do it from the file text.",
     "Don't offer to continue: the person will say carry on when ready.",
     "You can also switch the conversation pane between the chat and the trajectory with view_show, and end the voice call with call_end when the person says goodbye.",
@@ -77,8 +78,26 @@ const AGENT_TOOLS = new Set(
     "reader-resume",
     "view-show",
     "call-end",
+    "file-list",
+    "folder-create",
+    "entry-move",
+    "folder-remove",
   ].map((name) => `reader.${name}`),
 );
+
+export function libraryContext(tree: Entry[]): string {
+  const lines = (entries: Entry[], depth: number): string[] =>
+    entries.flatMap((e) =>
+      e.kind === "folder"
+        ? [`${"  ".repeat(depth)}${e.name}/ (folder)`, ...lines(e.children, depth + 1)]
+        : [`${"  ".repeat(depth)}${e.title} (${e.path})`],
+    );
+  const all = lines(tree, 0);
+  return [
+    "The library (folders end with /): questions about it are about the app, not the open file. Answer them from this list, open a file with reader_open, make a folder with folder_create, move or rename a file or folder with entry_move (from and to are paths, such as research/orca.md), and remove an empty folder with folder_remove.",
+    all.length ? all.join("\n") : "The library has no files yet.",
+  ].join("\n");
+}
 
 const toolName = (action: string) => action.replace(/-/g, "_");
 
@@ -95,14 +114,11 @@ export async function openAgent(options: AgentOptions): Promise<Agent> {
           "read",
           async () => {
             const doc = await reader.document();
-            const files = reader.library.files();
             const intro =
-              "You are the reading companion in Read. You read files aloud with the person and answer questions about them. Replies are spoken, so keep them short and plain, with no Markdown.";
-            const list = files.length
-              ? `The files (open one with reader_open): ${files.map((f) => f.title).join("; ")}.`
-              : "The library has no files yet.";
-            if (!doc) return `${intro}\n\n${list}`;
-            return `${intro}\n\n${fileContext(doc, reader.state.index, reader.state.playing)}`;
+              "You are the reading companion in Read. You read files aloud with the person, answer questions about them, and look after their library of folders and files. Replies are spoken, so keep them short and plain, with no Markdown.";
+            const library = libraryContext(reader.library.tree());
+            if (!doc) return `${intro}\n\n${library}`;
+            return `${intro}\n\n${library}\n\n${fileContext(doc, reader.state.index, reader.state.playing)}`;
           },
           { tag: false },
         ),

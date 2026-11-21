@@ -6,6 +6,7 @@ import {
   matchFile,
   parseApp,
   parseCommand,
+  parseLibrary,
   parseOpen,
   pickChoice,
 } from "./commands.js";
@@ -270,4 +271,24 @@ test("two titles with the same words are told apart by their order", () => {
   });
   assert.equal(pickChoice("I meant commands the client sends to the agent.", doc, [2, 1]), 1);
   assert.equal(pickChoice("the second one", doc, [2, 1]), undefined);
+});
+
+test("the library is asked about and changed by voice", () => {
+  assert.deepEqual(parseLibrary("Can you tell me what folders we've got in our library?"), {
+    cmd: "list_folders",
+  });
+  assert.deepEqual(parseLibrary("list the folders"), { cmd: "list_folders" });
+  assert.deepEqual(parseLibrary("what's in the research folder?"), {
+    cmd: "list_folder",
+    folder: "research",
+  });
+  assert.deepEqual(parseLibrary("which files are in the agents folder"), {
+    cmd: "list_folder",
+    folder: "agents",
+  });
+  assert.deepEqual(parseLibrary("make a folder called Protocols"), {
+    cmd: "make_folder",
+    name: "Protocols",
+  });
+  assert.equal(parseLibrary("what does the file say about folders?"), undefined);
 });
