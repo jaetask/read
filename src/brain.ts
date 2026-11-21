@@ -219,7 +219,9 @@ export function readBrain(options: ReadBrainOptions): ReadBrain {
       try {
         const conversation = await options.agent.conversation(reader.state.path ?? "");
         let reply = "";
-        for await (const piece of durableBrain(options.agent.harness, conversation).reply(text, {
+        const at = doc?.sections[reader.state.index]?.title;
+        const asked = at ? `(The reading is at the section "${plain(at)}".) ${text}` : text;
+        for await (const piece of durableBrain(options.agent.harness, conversation).reply(asked, {
           signal,
         })) {
           if (typeof piece === "string") {
