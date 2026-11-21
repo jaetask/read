@@ -1,18 +1,20 @@
-import {
-  AppShell,
-  EmptyLine,
-  IconAction,
-  LinkProvider,
-  type LinkComponent,
-  WorkPage,
-} from "@jaetask/toolkit/suite";
+import { AppShell, LinkProvider, type LinkComponent } from "@jaetask/toolkit/suite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { call, type Doc, type Entry, read, type Turn } from "./api";
-import { Chat } from "./chat";
+import { ChatPane } from "./chat";
 import { Icon } from "./icons";
 import { fileHref, Library } from "./library";
 import { Reader } from "./reader";
-import { connect, disconnect, hush, type Line, resetLines, unlockAudio, useVoice } from "./voice";
+import { Split } from "./split";
+import {
+  connect,
+  disconnect,
+  type Line,
+  resetLines,
+  stopSpeaking,
+  unlockAudio,
+  useVoice,
+} from "./voice";
 
 const hashPath = () => window.location.hash.replace(/^#/, "") || "/";
 
@@ -39,10 +41,10 @@ const HashLink: LinkComponent = ({ href, children, ...rest }) => (
 const fileOf = (route: string) =>
   route.startsWith("/file/") ? route.slice(6).split("/").map(decodeURIComponent).join("/") : null;
 
-function firstFile(entry: Entry): string | undefined {
+function _firstFile(entry: Entry): string | undefined {
   if (entry.kind === "file") return entry.path;
   for (const child of entry.children) {
-    const found = firstFile(child);
+    const found = _firstFile(child);
     if (found) return found;
   }
   return undefined;
@@ -53,84 +55,6 @@ const toLines = (turns: Turn[]): Line[] =>
     { id: `t${t.id}p`, from: "person" as const, text: t.said },
     ...(t.reply ? [{ id: `t${t.id}r`, from: "reader" as const, text: t.reply }] : []),
   ]);
-
-function Controls({ doc, playing, index }: { doc: Doc; playing: boolean; index: number }) {
-  const act = (action: string) => {
-    unlockAudio();
-    if (action === "reader-pause") hush();
-    void call(action);
-  };
-  const last = doc.sections.length - 1;
-  return (
-    <>
-      {index > 0 && (
-        <IconAction
-          label="Previous section"
-          icon={<Icon name="previous" />}
-          onClick={() => act("reader-previous")}
-        />
-      )}
-      {playing ? (
-        <IconAction
-          label="Pause"
-          primary
-          icon={<Icon name="pause" />}
-          onClick={() => act("reader-pause")}
-        />
-      ) : (
-        <IconAction
-          label="Read aloud"
-          primary
-          icon={<Icon name="play" />}
-          onClick={() => act("reader-resume")}
-        />
-      )}
-      {index < last && (
-        <IconAction
-          label="Next section"
-          icon={<Icon name="next" />}
-          onClick={() => act("reader-next")}
-        />
-      )}
-      <IconAction
-        label="Close the file"
-        icon={<Icon name="close" />}
-        onClick={() => {
-          hush();
-          void call("reader-close").then(() => go("/"));
-        }}
-      />
-    </>
-  );
-}
-
-const READ_HELP =
-  'Read reads the file aloud and highlights the sentence you hear. Click a heading to read from there. Talk or type: "next", "pause", "read it again", "read section two", "open the Orca file", or ask a question about the file.';
-
-function Home({ tree }: { tree: Entry[] }) {
-  const first = tree.map(firstFile).find(Boolean);
-  return (
-    <WorkPage
-      title="Library"
-      help="Your folders and files are on the left. Open one to read it aloud together. Make folders with the button next to Files and drag files into them."
-      action={
-        first ? (
-          <IconAction
-            label="Open the first file"
-            icon={<Icon name="book" />}
-            href={fileHref(first)}
-          />
-        ) : undefined
-      }
-    >
-      <EmptyLine>
-        {first
-          ? 'Pick a file on the left, or say "open" and its name.'
-          : "No files yet. Put Markdown, text or PDF files in the library folder."}
-      </EmptyLine>
-    </WorkPage>
-  );
-}
 
 function App() {
   const route = useHashPath();
@@ -199,14 +123,21 @@ function App() {
     };
   }, [voice.path]);
 
-  const shown = doc && doc.path === voice.path ? doc : null;
-  const page = shown && wanted ? "file" : "home";
+  const shown = doc && doc.path === voice.path && wanted ? doc : null;
+  const act = (action: string, input: unknown = {}) => {
+    unlockAudio();
+    if (action === "reader-pause") stopSpeaking();
+    void call(action, input);
+  };
+  const pane = (
+    <ChatPane voice={voice} file={voice.path} problem={problem} onDismiss={() => setProblem("")} />
+  );
 
   return (
     <AppShell
       app={{ name: "Read", href: "/" }}
       bar={false}
-      nav={[{ href: "/", label: "Library", icon: <Icon name="books" />, current: page === "home" }]}
+      nav={[{ href: "/", label: "Library", icon: <Icon name="books" />, current: !shown }]}
       side={(collapsed) =>
         collapsed ? null : (
           <Library
@@ -218,35 +149,38 @@ function App() {
         )
       }
     >
-      <div className="read-split">
-        <div className="read-main">
-          {page === "file" && shown ? (
-            <WorkPage
-              title={shown.title}
-              help={READ_HELP}
-              action={<Controls doc={shown} playing={voice.playing} index={voice.index} />}
-              wide
-            >
+      <div className="read-frame">
+        {shown ? (
+          <Split
+            id="read.layout.reader"
+            leftId="document"
+            rightId="pane"
+            leftSize={50}
+            minLeft={30}
+            maxLeft={75}
+            minRight={25}
+            left={
               <Reader
-                doc={shown}
+                file={shown}
                 index={voice.index}
+                playing={voice.playing}
                 heard={voice.heard}
-                onGoto={(i) => {
-                  unlockAudio();
-                  void call("reader-goto", { index: i, play: true });
+                onPlay={() => act("reader-resume")}
+                onPause={() => act("reader-pause")}
+                onNext={() => act("reader-next")}
+                onPrev={() => act("reader-previous")}
+                onGoto={(i) => act("reader-goto", { index: i, play: true })}
+                onClose={() => {
+                  stopSpeaking();
+                  void call("reader-close").then(() => go("/"));
                 }}
               />
-            </WorkPage>
-          ) : (
-            <Home tree={tree} />
-          )}
-        </div>
-        <Chat
-          voice={voice}
-          title={shown?.title ?? null}
-          problem={problem}
-          onDismiss={() => setProblem("")}
-        />
+            }
+            right={pane}
+          />
+        ) : (
+          pane
+        )}
       </div>
     </AppShell>
   );

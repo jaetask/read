@@ -13,6 +13,7 @@ import {
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { contract } from "@jaetask/open-agent-kit";
 import type { Calls } from "@jaetask/open-agent-kit";
+import { tracing } from "./chat/trace.js";
 import { type Document, outline } from "./files/sections.js";
 import { readerDomain } from "./reader/domain.js";
 import type { Reader } from "./reader/reader.js";
@@ -112,13 +113,18 @@ export async function openAgent(options: AgentOptions): Promise<Agent> {
             parameters,
             execute: async (args: unknown) => {
               seq += 1;
-              const outcome = await options.calls().invoke({
-                id: `agent-${Date.now()}-${seq}`,
-                action: action.name as `${string}.${string}`,
-                input: args ?? {},
-                principal: { id: options.owner },
-                caller: "agent",
-              });
+              const invoke = () =>
+                options.calls().invoke({
+                  id: `agent-${Date.now()}-${seq}`,
+                  action: action.name as `${string}.${string}`,
+                  input: args ?? {},
+                  principal: { id: options.owner },
+                  caller: "agent",
+                });
+              const trace = tracing.current;
+              const outcome = trace
+                ? await trace.call(action.name, action.effect, args ?? {}, "agent", invoke)
+                : await invoke();
               const ok = outcome.state === "succeeded";
               const result = ok
                 ? outcome.output

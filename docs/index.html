@@ -376,7 +376,7 @@ img.shot{display:block;width:100%;height:auto;border:1px solid var(--line);borde
     <div class="stack prose">
       <span class="eyebrow">4 · Steering it</span>
       <h2>Say what to read, and it moves at once</h2>
-      <p>Turn on the microphone in the message box and talk, or type. Read listens for <b>reading commands</b>: pause, carry on, repeat, next, go back, start from the top, what sections are there, and "read" or "go to" with a section's name or number. It also opens a file you name, such as "open the Orca file". These act at once, without a model, the same way every time.</p>
+      <p>Type in the message box, hold the microphone button (or hold Space) to say something, or start a hands-free voice call with the wave button and just talk. Press Esc to stop it speaking. Read listens for <b>reading commands</b>: pause, carry on, repeat, next, go back, start from the top, what sections are there, and "read" or "go to" with a section's name or number. It also opens a file you name, such as "open the Orca file". These act at once, without a model, the same way every time.</p>
       <p>When two sections fit what you said, Read asks which one, and "the first one" or "the second one" picks it. A question that names a section, such as "what does section six say about Slack?", is never a command: it goes to the agent.</p>
     </div>
     <figure class="fig"><div class="fig-scroll"><svg viewBox="0 0 840 330" width="100%" style="max-width:840px;height:auto" role="img" aria-label="A turn: a file to open opens it, a reading command moves the reader, both without a model; anything else goes to the agent, which answers from the open file."><defs>
@@ -406,6 +406,9 @@ img.shot{display:block;width:100%;height:auto;border:1px solid var(--line);borde
       <div class="card"><h3>A long file</h3><p>The agent sees the sections around the reading, and can look the rest up without moving the reader.</p></div>
       <div class="card"><h3>No model set up</h3><p>Reading commands still work. A question gets one line saying no model is set up.</p></div>
     </div>
+    <figure class="fig"><img class="shot" src="img/trajectory.png" alt="The Trajectory: Duration, Turns and Calls, the timeline strip with User, Model, Tools and Voice lanes, and a row for each step: what was said, the route, each reader call and the reply." loading="lazy">
+      <figcaption>Trajectory, at the top of the chat, shows every turn step by step: what you said, how Read routed it, each reader call with its arguments and result, and the reply, with timings. Click a row for its details; Session log saves it all.</figcaption>
+    </figure>
   </div>
 </section>
 

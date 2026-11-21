@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { table } from "@jaetask/snap";
 import { createRead } from "../src/app.js";
 import { readBrain } from "../src/brain.js";
-import { sqliteTurns } from "../src/chat/turns.js";
 
 type Script = { open?: string; said: string[] };
 
@@ -23,7 +22,6 @@ export async function runVoice(input: string): Promise<string> {
       reader: app.reader,
       calls: app.calls,
       agent: undefined,
-      turns: sqliteTurns(app.db),
       owner: "owner",
       note: (text) => notes.push(text),
       source: () => "voice",

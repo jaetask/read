@@ -31,6 +31,7 @@
 | reader.reader-resume | write | Carry on reading aloud from the sentence where it paused. |
 | reader.reader-close | write | Close the open file. Its place is kept for next time. |
 | reader.chat-turns | read | The conversation about a file: what was said and the reply, oldest first. Leave file out for the open file. |
+| reader.chat-timeline | read | The trajectory of the conversation about a file: for each turn what was said, how it was routed, every reader call with its arguments and result, the reply, and the timings. Leave file out for the open file. |
 
 ### Agent context
 
@@ -52,6 +53,7 @@ Tools:
 - reader__reader-resume (changes): Carry on reading aloud from the sentence where it paused.
 - reader__reader-close (changes): Close the open file. Its place is kept for next time.
 - reader__chat-turns (reads): The conversation about a file: what was said and the reply, oldest first. Leave file out for the open file.
+- reader__chat-timeline (reads): The trajectory of the conversation about a file: for each turn what was said, how it was routed, every reader call with its arguments and result, the reply, and the timings. Leave file out for the open file.
 A tool that changes something after the person says yes waits for them; tell them what you asked for.
 ```
 
@@ -270,6 +272,20 @@ A tool that changes something after the person says yes waits for them; tell the
 ```
 
 #### reader.chat-turns
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "file": {
+      "type": "string"
+    }
+  }
+}
+```
+
+#### reader.chat-timeline
 
 ```json
 {

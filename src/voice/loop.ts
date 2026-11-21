@@ -124,6 +124,11 @@ export class VoiceLoop {
     } else if (event === "blip") await this.emit({ type: "state", state: "listening" });
   }
 
+  clip(pcm: Uint8Array): Promise<void> {
+    void this.interrupt();
+    return this.start(pcm, undefined);
+  }
+
   say(text: string): Promise<void> {
     void this.interrupt();
     return this.start(undefined, text);
