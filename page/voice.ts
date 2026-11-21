@@ -25,6 +25,7 @@ export type VoiceView = {
   timings: Record<string, number> | null;
   model: string | null;
   turns: number;
+  tab: "chat" | "trajectory";
 };
 
 type FromServer =
@@ -37,6 +38,8 @@ type FromServer =
   | { type: "done"; text: string; interrupted: boolean }
   | { type: "turn"; id: number; timings: Record<string, number>; model: string | null }
   | { type: "state"; state: "listening" | "hearing" | "thinking" | "speaking" | "idle" }
+  | { type: "view"; view: "chat" | "trajectory" }
+  | { type: "call-end" }
   | { type: "error"; text: string };
 
 const MIC_RATE = 16000;
@@ -55,6 +58,7 @@ let view: VoiceView = {
   timings: null,
   model: null,
   turns: 0,
+  tab: "chat",
 };
 const watchers = new Set<() => void>();
 const set = (patch: Partial<VoiceView>) => {
@@ -69,6 +73,7 @@ let mic: MicCapture | undefined;
 let micUse: "hold" | "call" | null = null;
 let retry: ReturnType<typeof setTimeout> | undefined;
 let seq = 0;
+let endAfterReply = false;
 
 const nextId = () => {
   seq += 1;
@@ -145,6 +150,14 @@ function onMessage(m: FromServer) {
       break;
     case "done":
       settleLive(m.text);
+      if (endAfterReply) {
+        endAfterReply = false;
+        void new Promise((resolve) => setTimeout(resolve, 300))
+          .then(() => player?.whenIdle(20000))
+          .then(() => {
+            if (view.onCall) endCall();
+          });
+      }
       if (!view.onCall && view.state !== "speaking") set({ state: "idle" });
       break;
     case "turn":
@@ -155,6 +168,12 @@ function onMessage(m: FromServer) {
       else if (m.state === "speaking") set({ state: "speaking" });
       else if (m.state === "thinking" || m.state === "hearing") set({ state: "busy" });
       else if (view.state !== "recording" && !player?.playing) set({ state: "idle" });
+      break;
+    case "view":
+      set({ tab: m.view });
+      break;
+    case "call-end":
+      endAfterReply = true;
       break;
     case "error":
       set({ error: m.text });
@@ -279,6 +298,10 @@ export function endCall() {
   send({ type: "call", on: false });
   closeMic();
   set({ onCall: false, state: "idle" });
+}
+
+export function showTab(tab: VoiceView["tab"]) {
+  set({ tab });
 }
 
 export function useVoice(): VoiceView {

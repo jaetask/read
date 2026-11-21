@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CHOICE, findSection, matchFile, parseCommand, parseOpen } from "./commands.js";
+import { CHOICE, findSection, matchFile, parseApp, parseCommand, parseOpen } from "./commands.js";
 import { library } from "./library.js";
 import { type Document, type Section, spokenParts, splitSections } from "./sections.js";
 
@@ -220,4 +220,22 @@ test("a title that ends in it, this or that is still a title", () => {
   assert.deepEqual(parseCommand("go to why people like it", doc), { cmd: "goto", index: 2 });
   assert.deepEqual(parseCommand("read it again", doc), { cmd: "repeat" });
   assert.deepEqual(parseCommand("read that again", doc), { cmd: "repeat" });
+});
+
+test("the conversation pane and the call are steered by voice", () => {
+  const view = (t: string) => {
+    const app = parseApp(t);
+    return app?.cmd === "view" ? app.view : app?.cmd;
+  };
+  assert.equal(
+    view("Can you switch from the chat mode to the trajectory mode please?"),
+    "trajectory",
+  );
+  assert.equal(view("show me the trajectory"), "trajectory");
+  assert.equal(view("go back to the chat"), "chat");
+  assert.equal(view("close the trajectory and show the chat"), "chat");
+  assert.equal(view("Do you want to drop off the call? Let's say goodbye."), "end_call");
+  assert.equal(view("hang up"), "end_call");
+  assert.equal(view("what does the trajectory of the project look like in this file?"), undefined);
+  assert.equal(view("read section stack and size"), undefined);
 });

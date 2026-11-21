@@ -12,7 +12,9 @@ import {
 export type ReaderEvent =
   | { type: "reader"; path: string | null; index: number; playing: boolean; finished?: boolean }
   | { type: "sentence"; path: string; index: number; sentence: number; text: string }
-  | { type: "hush" };
+  | { type: "hush" }
+  | { type: "view"; view: "chat" | "trajectory" }
+  | { type: "call-end" };
 
 export type Listener = { send(event: ReaderEvent): void };
 
@@ -119,6 +121,14 @@ export class Reader {
 
   private emit(event: ReaderEvent) {
     for (const l of this.listeners) l.send(event);
+  }
+
+  show(view: "chat" | "trajectory") {
+    this.emit({ type: "view", view });
+  }
+
+  endCall() {
+    this.emit({ type: "call-end" });
   }
 
   private announce(finished?: boolean) {

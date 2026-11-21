@@ -30,6 +30,8 @@
 | reader.reader-pause | write | Pause reading aloud. The reader keeps its place. |
 | reader.reader-resume | write | Carry on reading aloud from the sentence where it paused. |
 | reader.reader-close | write | Close the open file. Its place is kept for next time. |
+| reader.view-show | write | Switch the conversation pane between the chat and the trajectory, the step-by-step log of each turn with its reader calls and timings. |
+| reader.call-end | write | End the hands-free voice call, after the reply has been spoken. Use it when the person says goodbye or asks to hang up or drop off the call. |
 | reader.chat-turns | read | The conversation about a file: what was said and the reply, oldest first. Leave file out for the open file. |
 | reader.chat-timeline | read | The trajectory of the conversation about a file: for each turn what was said, how it was routed, every reader call with its arguments and result, the reply, and the timings. Leave file out for the open file. |
 
@@ -52,6 +54,8 @@ Tools:
 - reader__reader-pause (changes): Pause reading aloud. The reader keeps its place.
 - reader__reader-resume (changes): Carry on reading aloud from the sentence where it paused.
 - reader__reader-close (changes): Close the open file. Its place is kept for next time.
+- reader__view-show (changes): Switch the conversation pane between the chat and the trajectory, the step-by-step log of each turn with its reader calls and timings.
+- reader__call-end (changes): End the hands-free voice call, after the reply has been spoken. Use it when the person says goodbye or asks to hang up or drop off the call.
 - reader__chat-turns (reads): The conversation about a file: what was said and the reply, oldest first. Leave file out for the open file.
 - reader__chat-timeline (reads): The trajectory of the conversation about a file: for each turn what was said, how it was routed, every reader call with its arguments and result, the reply, and the timings. Leave file out for the open file.
 A tool that changes something after the person says yes waits for them; tell them what you asked for.
@@ -262,6 +266,37 @@ A tool that changes something after the person says yes waits for them; tell the
 ```
 
 #### reader.reader-close
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {}
+}
+```
+
+#### reader.view-show
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "view": {
+      "type": "string",
+      "enum": [
+        "chat",
+        "trajectory"
+      ]
+    }
+  },
+  "required": [
+    "view"
+  ]
+}
+```
+
+#### reader.call-end
 
 ```json
 {
