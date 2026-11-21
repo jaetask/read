@@ -89,23 +89,18 @@ function App() {
     if (voice.connected) asked.current = null;
   }, [voice.connected]);
   useEffect(() => {
-    if (!voice.connected || !wanted || asked.current === wanted) return;
+    if (!voice.connected || !wanted || wanted === voice.path || asked.current === wanted) return;
     asked.current = wanted;
-    if (wanted !== voice.path) void call("reader-open", { file: wanted });
+    void call("reader-open", { file: wanted });
   }, [voice.connected, wanted, voice.path]);
 
-  const followed = useRef(false);
+  const seen = useRef<string | null>(null);
   useEffect(() => {
-    if (!voice.path) return;
-    const first = !followed.current && route === "/";
-    followed.current = true;
-    const moved =
-      route.startsWith("/file/") && asked.current === fileOf(route) && asked.current !== voice.path;
-    if (first || moved) {
-      asked.current = voice.path;
-      go(fileHref(voice.path));
-    }
-  }, [voice.path, route]);
+    if (!voice.path || voice.path === seen.current) return;
+    seen.current = voice.path;
+    asked.current = voice.path;
+    if (fileOf(hashPath()) !== voice.path) go(fileHref(voice.path));
+  }, [voice.path]);
 
   useEffect(() => {
     if (!voice.path) {
@@ -126,7 +121,7 @@ function App() {
     };
   }, [voice.path]);
 
-  const shown = doc && doc.path === voice.path && wanted ? doc : null;
+  const shown = doc && doc.path === voice.path ? doc : null;
   const act = (action: string, input: unknown = {}) => {
     unlockAudio();
     if (action === "reader-pause") stopSpeaking();
