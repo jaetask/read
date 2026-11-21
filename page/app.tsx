@@ -86,6 +86,9 @@ function App() {
 
   const asked = useRef<string | null>(null);
   useEffect(() => {
+    if (voice.connected) asked.current = null;
+  }, [voice.connected]);
+  useEffect(() => {
     if (!voice.connected || !wanted || asked.current === wanted) return;
     asked.current = wanted;
     if (wanted !== voice.path) void call("reader-open", { file: wanted });
