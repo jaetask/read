@@ -28,19 +28,22 @@ body {
 .read-main {
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
+  padding: 24px 24px 0;
+}
+
+.read-main .tk-work-head {
+  position: sticky;
+  top: -24px;
+  z-index: 1;
+  margin: -24px -24px 0;
+  padding: 24px 24px 12px;
+  background: var(--tk-page);
 }
 
 .read-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 32px 48px 96px;
   max-width: 46rem;
-  width: 100%;
-  margin: 0 auto;
+  padding-bottom: 96px;
 }
 
 .read-section {
@@ -158,6 +161,9 @@ body {
 }
 
 .read-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0 20px 8px;
   color: var(--tk-danger);
 }
@@ -172,102 +178,9 @@ body {
     border-left: 0;
     border-top: 1px solid var(--tk-line);
   }
-
-  .read-body {
-    padding: 24px 20px 64px;
-  }
 }
 
 .read-heading,
 .read-heading:hover {
   text-decoration: none;
-}
-
-.read-library {
-  display: grid;
-  gap: 1px;
-  padding: 8px 6px 16px;
-}
-
-.read-library-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 6px 6px 12px;
-  border-radius: var(--tk-radius-row);
-}
-
-.read-library-head > .tk-group-label {
-  padding: 0;
-}
-
-.read-folder[data-over],
-.read-library-head[data-over] {
-  background: var(--tk-tint-soft);
-}
-
-.read-row {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  min-width: 0;
-  border-radius: var(--tk-radius-row);
-}
-
-.read-row:hover {
-  background: var(--tk-side-fill);
-}
-
-.read-row-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  height: auto;
-  padding: 6px 6px;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--tk-ink);
-  text-decoration: none;
-  background: transparent;
-}
-
-.read-row-main[aria-current="page"] {
-  font-weight: 600;
-}
-
-.read-row-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.read-row-menu {
-  opacity: 0;
-  flex: none;
-}
-
-.read-row:hover .read-row-menu,
-.read-row-menu[data-state="open"],
-.read-row:focus-within .read-row-menu {
-  opacity: 1;
-}
-
-.read-row-empty {
-  margin: 0;
-  padding: 4px 12px;
-  font-size: 12px;
-}
-
-.read-dialog {
-  display: grid;
-  gap: 16px;
-}
-
-.read-main > :not(.read-body) {
-  overflow-y: auto;
-  padding: 12px 24px 40px;
 }

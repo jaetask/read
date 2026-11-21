@@ -12,7 +12,17 @@ const STATE_LINE: Record<VoiceView["state"], string> = {
   speaking: "Speaking",
 };
 
-export function Chat({ voice, title }: { voice: VoiceView; title: string | null }) {
+export function Chat({
+  voice,
+  title,
+  problem,
+  onDismiss,
+}: {
+  voice: VoiceView;
+  title: string | null;
+  problem: string;
+  onDismiss: () => void;
+}) {
   const [text, setText] = useState("");
   const end = useRef<HTMLDivElement>(null);
   const count = voice.lines.length + (voice.lines.at(-1)?.text.length ?? 0);
@@ -52,9 +62,14 @@ export function Chat({ voice, title }: { voice: VoiceView; title: string | null 
         )}
         <div ref={end} />
       </div>
-      {voice.error && (
+      {(voice.error || problem) && (
         <p className="read-error" role="alert">
-          {voice.error}
+          {problem || voice.error}
+          {problem && (
+            <Button variant="ghost" size="icon-xs" aria-label="Dismiss" onClick={onDismiss}>
+              <Icon name="close" />
+            </Button>
+          )}
         </p>
       )}
       <form className="read-composer" onSubmit={send}>

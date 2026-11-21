@@ -1,11 +1,13 @@
 import {
   AppShell,
   CenteredPage,
+  EmptyLine,
+  IconAction,
   LinkProvider,
   type LinkComponent,
-  PageBody,
-  Panel,
+  WorkPage,
 } from "@jaetask/toolkit/suite";
+import { IconArrowLeft } from "@tabler/icons-react";
 import { Button } from "@jaetask/toolkit/ui/button";
 import { Input } from "@jaetask/toolkit/ui/input";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
@@ -100,107 +102,92 @@ function SignIn({ onSignedIn }: { onSignedIn: () => void }) {
 }
 
 function Controls({ doc, playing, index }: { doc: Doc; playing: boolean; index: number }) {
-  const act = (action: string, input: unknown = {}) => {
+  const act = (action: string) => {
     unlockAudio();
     if (action === "reader-pause") hush();
-    void call(action, input);
+    void call(action);
   };
   const last = doc.sections.length - 1;
   return (
-    <div className="read-controls">
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Previous section"
-        title="Previous section"
-        disabled={index <= 0}
-        onClick={() => act("reader-previous")}
-      >
-        <Icon name="player-track-prev" />
-      </Button>
-      <Button
-        size="icon"
-        aria-label={playing ? "Pause" : "Read aloud"}
-        title={playing ? "Pause" : "Read aloud"}
-        onClick={() => (playing ? act("reader-pause") : act("reader-resume"))}
-      >
-        <Icon name={playing ? "player-pause" : "player-play"} />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Next section"
-        title="Next section"
-        disabled={index >= last}
-        onClick={() => act("reader-next")}
-      >
-        <Icon name="player-track-next" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label="Close the file"
-        title="Close the file"
+    <>
+      {index > 0 && (
+        <IconAction
+          label="Previous section"
+          icon={<Icon name="previous" />}
+          onClick={() => act("reader-previous")}
+        />
+      )}
+      {playing ? (
+        <IconAction
+          label="Pause"
+          primary
+          icon={<Icon name="pause" />}
+          onClick={() => act("reader-pause")}
+        />
+      ) : (
+        <IconAction
+          label="Read aloud"
+          primary
+          icon={<Icon name="play" />}
+          onClick={() => act("reader-resume")}
+        />
+      )}
+      {index < last && (
+        <IconAction
+          label="Next section"
+          icon={<Icon name="next" />}
+          onClick={() => act("reader-next")}
+        />
+      )}
+      <IconAction
+        label="Close the file"
+        icon={<Icon name="close" />}
         onClick={() => {
           hush();
           void call("reader-close").then(() => go("/"));
         }}
-      >
-        <Icon name="x" />
-      </Button>
-    </div>
+      />
+    </>
   );
 }
+
+const READ_HELP =
+  'Read reads the file aloud and highlights the sentence you hear. Click a heading to read from there. Talk or type: "next", "pause", "read it again", "read section two", "open the Orca file", or ask a question about the file.';
 
 function Home({ tree }: { tree: Entry[] }) {
   const first = tree.map(firstFile).find(Boolean);
   return (
-    <PageBody
+    <WorkPage
       title="Library"
-      line="Pick a file on the left. Read reads it aloud and answers questions about it."
+      help="Your folders and files are on the left. Open one to read it aloud together. Make folders with the button next to Files and drag files into them."
+      action={
+        first ? (
+          <IconAction
+            label="Open the first file"
+            icon={<Icon name="book" />}
+            href={fileHref(first)}
+          />
+        ) : undefined
+      }
     >
-      <Panel
-        id="library"
-        title={first ? "Start reading" : "No files yet"}
-        line={
-          first
-            ? "Open a file to read it together."
-            : "Put Markdown, text or PDF files in the library folder. Folders show on the left."
-        }
-      >
-        {first && (
-          <Button variant="outline" onClick={() => go(fileHref(first))}>
-            <Icon name="book" />
-            Open the first file
-          </Button>
-        )}
-      </Panel>
-    </PageBody>
+      <EmptyLine>
+        {first
+          ? 'Pick a file on the left, or say "open" and its name.'
+          : "No files yet. Put Markdown, text or PDF files in the library folder."}
+      </EmptyLine>
+    </WorkPage>
   );
 }
 
 function SettingsPage({ onSignOut }: { onSignOut: () => void }) {
   return (
-    <PageBody title="Settings" line="This browser's session.">
-      <Panel
-        id="session"
-        title="Session"
-        line="Signing out ends the session in this browser only."
-        action={
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Sign out"
-            title="Sign out"
-            onClick={onSignOut}
-          >
-            <Icon name="logout" />
-          </Button>
-        }
-      >
-        <p className="tk-muted">You are signed in with the setup secret.</p>
-      </Panel>
-    </PageBody>
+    <WorkPage
+      title="This browser"
+      help="You are signed in with the setup secret. Signing out ends the session in this browser only."
+      action={<IconAction label="Sign out" icon={<Icon name="logout" />} onClick={onSignOut} />}
+    >
+      <EmptyLine>Signed in. A session lasts 30 days.</EmptyLine>
+    </WorkPage>
   );
 }
 
@@ -209,6 +196,7 @@ function App() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [tree, setTree] = useState<Entry[]>([]);
   const [doc, setDoc] = useState<Doc | null>(null);
+  const [problem, setProblem] = useState("");
   const voice = useVoice();
   const wanted = fileOf(route);
 
@@ -287,29 +275,46 @@ function App() {
   const shown = doc && doc.path === voice.path ? doc : null;
   const page = route === "/settings" ? "settings" : shown && wanted ? "file" : "home";
 
+  if (page === "settings")
+    return (
+      <AppShell
+        app={{ name: "Read", href: "/" }}
+        bar={false}
+        nav={[
+          { href: "/", label: "Back to Read", icon: <IconArrowLeft size={16} aria-hidden /> },
+          { href: "/settings", label: "This browser", icon: <Icon name="logout" />, current: true },
+        ]}
+      >
+        <SettingsPage onSignOut={signOut} />
+      </AppShell>
+    );
+
   return (
     <AppShell
       app={{ name: "Read", href: "/" }}
-      title={page === "file" && shown ? shown.title : page === "settings" ? "Settings" : "Library"}
-      topAside={
-        page === "file" && shown ? (
-          <Controls doc={shown} playing={voice.playing} index={voice.index} />
-        ) : undefined
-      }
+      bar={false}
       nav={[{ href: "/", label: "Library", icon: <Icon name="books" />, current: page === "home" }]}
       side={(collapsed) =>
         collapsed ? null : (
-          <Library tree={tree} current={voice.path} onChanged={() => void refreshTree()} />
+          <Library
+            tree={tree}
+            current={voice.path}
+            onChanged={() => void refreshTree()}
+            onError={setProblem}
+          />
         )
       }
       settingsHref="/settings"
     >
-      {page === "settings" ? (
-        <SettingsPage onSignOut={signOut} />
-      ) : (
-        <div className="read-split">
-          <div className="read-main">
-            {page === "file" && shown ? (
+      <div className="read-split">
+        <div className="read-main">
+          {page === "file" && shown ? (
+            <WorkPage
+              title={shown.title}
+              help={READ_HELP}
+              action={<Controls doc={shown} playing={voice.playing} index={voice.index} />}
+              wide
+            >
               <Reader
                 doc={shown}
                 index={voice.index}
@@ -319,13 +324,18 @@ function App() {
                   void call("reader-goto", { index: i, play: true });
                 }}
               />
-            ) : (
-              <Home tree={tree} />
-            )}
-          </div>
-          <Chat voice={voice} title={shown?.title ?? null} />
+            </WorkPage>
+          ) : (
+            <Home tree={tree} />
+          )}
         </div>
-      )}
+        <Chat
+          voice={voice}
+          title={shown?.title ?? null}
+          problem={problem}
+          onDismiss={() => setProblem("")}
+        />
+      </div>
     </AppShell>
   );
 }

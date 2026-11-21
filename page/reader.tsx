@@ -28,7 +28,8 @@ export function Reader({
   }, [index]);
   useEffect(() => {
     const el = heard && (body.current?.children[heard.index] as HTMLElement | undefined);
-    if (el && heard) highlightSentence(el, heard.text, body.current);
+    if (el && heard)
+      highlightSentence(el, heard.text, body.current?.closest<HTMLElement>(".read-main"));
   }, [heard]);
   useEffect(() => clearReadAlong, []);
 
