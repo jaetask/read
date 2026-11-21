@@ -166,6 +166,7 @@ export async function createRead(options: ReadOptions): Promise<Read> {
             reader,
             calls: app.calls,
             agent,
+            model: choice.ready ? choice.model.modelId : null,
             turns: chat,
             owner: OWNER,
             stt,

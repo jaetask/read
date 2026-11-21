@@ -8,6 +8,7 @@
 
 | action the page calls | effect |
 | --- | --- |
+| reader.chat-timeline | read |
 | reader.chat-turns | read |
 | reader.entry-move | write |
 | reader.file-get | read |

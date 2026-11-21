@@ -1,34 +1,54 @@
 import { Button } from "@jaetask/toolkit/ui/button";
 import { Textarea } from "@jaetask/toolkit/ui/textarea";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { Icon } from "./icons";
-import { type Line, say, startListening, stopListening, type VoiceView } from "./voice";
+import { ComposerVoice } from "./composer-voice";
+import { AgentAvatar, Icon } from "./icons";
+import { renderMarkdown } from "./markdown";
+import { Trajectory } from "./trajectory";
+import { type Line, say, type VoiceView } from "./voice";
 
-const STATE_LINE: Record<VoiceView["state"], string> = {
-  idle: "",
-  listening: "Listening",
-  hearing: "Hearing you",
-  thinking: "Thinking",
-  speaking: "Speaking",
-};
+const AGENT = "Read";
 
-export function Chat({
+const sec = (t: Record<string, number>, k: string) =>
+  t[k] != null ? `${(t[k] as number).toFixed(2)}s` : "–";
+const timingLine = (t: Record<string, number>) =>
+  `heard ${sec(t, "asr")} · first words ${sec(t, "first_token")} · first sentence ${sec(t, "first_sentence")} · speaking after ${sec(t, "first_audio")} · total ${sec(t, "total")}`;
+
+function Message({ line }: { line: Line }) {
+  if (line.from === "person")
+    return (
+      <div className="flex justify-end">
+        <p className="m-0 max-w-[85%] rounded-2xl bg-muted px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap">
+          {line.text}
+        </p>
+      </div>
+    );
+  return (
+    <div
+      className="prose prose-sm max-w-none text-sm leading-relaxed dark:prose-invert"
+      dangerouslySetInnerHTML={{ __html: renderMarkdown(line.text) }}
+    />
+  );
+}
+
+export function ChatPane({
   voice,
-  title,
+  file,
   problem,
   onDismiss,
 }: {
   voice: VoiceView;
-  title: string | null;
+  file: string | null;
   problem: string;
   onDismiss: () => void;
 }) {
+  const [tab, setTab] = useState<"chat" | "trajectory">("chat");
   const [text, setText] = useState("");
   const end = useRef<HTMLDivElement>(null);
-  const count = voice.lines.length + (voice.lines.at(-1)?.text.length ?? 0);
+  const size = voice.lines.length + (voice.lines.at(-1)?.text.length ?? 0);
   useEffect(() => {
-    if (count) end.current?.scrollIntoView({ block: "end" });
-  }, [count]);
+    if (size) end.current?.scrollIntoView({ block: "end" });
+  }, [size]);
 
   const send = (e?: FormEvent) => {
     e?.preventDefault();
@@ -43,65 +63,90 @@ export function Chat({
       send();
     }
   };
+  const error = problem || voice.error;
 
   return (
-    <aside className="read-chat" aria-label="Conversation">
-      <div className="read-lines">
-        {voice.lines.length ? (
-          voice.lines.map((line: Line) => (
-            <p key={line.id} className="read-line" data-from={line.from}>
-              {line.text}
-            </p>
-          ))
-        ) : (
-          <p className="read-hint tk-muted">
-            {title
-              ? `Ask about ${title}, or say "read section two", "next", "pause" or "explain that more simply".`
-              : 'Open a file, or say "open" and its name.'}
-          </p>
-        )}
-        <div ref={end} />
+    <main className="flex h-full min-w-0 flex-1 flex-col" aria-label="Conversation">
+      <div className="relative flex h-14 shrink-0 items-center justify-center px-3">
+        <span className="flex h-10 items-center gap-2.5 rounded-full bg-muted/60 pr-4 pl-2 text-base font-medium">
+          <AgentAvatar name={AGENT} />
+          {AGENT}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          className="absolute right-3 h-9 rounded-full px-4"
+          aria-pressed={tab === "trajectory"}
+          title={tab === "chat" ? "Show the trajectory" : "Back to the chat"}
+          onClick={() => setTab(tab === "chat" ? "trajectory" : "chat")}
+        >
+          {tab === "chat" ? "Chat" : "Trajectory"}
+        </Button>
       </div>
-      {(voice.error || problem) && (
-        <p className="read-error" role="alert">
-          {problem || voice.error}
+      {tab === "trajectory" ? (
+        <Trajectory file={file} turns={voice.turns} />
+      ) : (
+        <>
+          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 py-6">
+            {voice.lines.length ? (
+              voice.lines.map((line) => <Message key={line.id} line={line} />)
+            ) : (
+              <p className="m-auto max-w-sm text-center text-sm text-muted-foreground">
+                {file
+                  ? 'Ask about this file, or say "read section two", "read it again", "next", "pause" or "explain it to me".'
+                  : 'Open a file on the left, or say "open" and its name.'}
+              </p>
+            )}
+            <div ref={end} />
+          </div>
+          <form
+            className="mx-4 mb-3 rounded-2xl border border-border bg-background p-3"
+            onSubmit={send}
+          >
+            <Textarea
+              aria-label={`Message ${AGENT}`}
+              value={text}
+              rows={3}
+              maxLength={4000}
+              placeholder={`Message ${AGENT}…`}
+              className="min-h-16 resize-none border-0 p-1 shadow-none"
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={onKey}
+            />
+            <div className="flex items-center justify-end gap-1 pt-1">
+              <ComposerVoice state={voice.state} onCall={voice.onCall} />
+              <Button
+                type="submit"
+                size="icon"
+                className="size-8 rounded-full"
+                aria-label="Send"
+                title="Send"
+                disabled={!text.trim()}
+              >
+                <Icon name="arrow-up" />
+              </Button>
+            </div>
+          </form>
+        </>
+      )}
+      {error ? (
+        <p className="flex items-center gap-2 px-4 pb-2 text-xs text-destructive" role="alert">
+          {error}
           {problem && (
             <Button variant="ghost" size="icon-xs" aria-label="Dismiss" onClick={onDismiss}>
               <Icon name="close" />
             </Button>
           )}
         </p>
+      ) : (
+        voice.timings &&
+        tab === "chat" && (
+          <p className="px-4 pb-2 text-center text-[11px] text-muted-foreground">
+            {voice.model ? `${voice.model} · ` : ""}
+            {timingLine(voice.timings)}
+          </p>
+        )
       )}
-      <form className="read-composer" onSubmit={send}>
-        <Textarea
-          aria-label="Message"
-          value={text}
-          rows={2}
-          maxLength={2000}
-          placeholder={title ? `Ask about ${title}` : "Ask or give a command"}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={onKey}
-        />
-        <div className="read-composer-bar">
-          <span className="read-state tk-muted">
-            {voice.listening ? STATE_LINE[voice.state] : ""}
-          </span>
-          <Button
-            type="button"
-            variant={voice.listening ? "default" : "ghost"}
-            size="icon"
-            aria-label={voice.listening ? "Stop listening" : "Talk hands-free"}
-            aria-pressed={voice.listening}
-            title={voice.listening ? "Stop listening" : "Talk hands-free"}
-            onClick={() => (voice.listening ? stopListening() : void startListening())}
-          >
-            <Icon name={voice.listening ? "microphone" : "microphone-off"} />
-          </Button>
-          <Button type="submit" size="icon" aria-label="Send" title="Send" disabled={!text.trim()}>
-            <Icon name="arrow-up" />
-          </Button>
-        </div>
-      </form>
-    </aside>
+    </main>
   );
 }

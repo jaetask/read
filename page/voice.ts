@@ -3,16 +3,28 @@ import { createAudioContext, MicCapture, micErrorMessage, openMic, PcmPlayer } f
 
 export type Line = { id: string; from: "person" | "reader"; text: string; live?: boolean };
 
+export type VoiceState =
+  | "idle"
+  | "recording"
+  | "busy"
+  | "listening"
+  | "hearing"
+  | "thinking"
+  | "speaking";
+
 export type VoiceView = {
   connected: boolean;
   path: string | null;
   index: number;
   playing: boolean;
   heard: { index: number; text: string } | null;
-  listening: boolean;
-  state: "listening" | "hearing" | "thinking" | "speaking" | "idle";
+  onCall: boolean;
+  state: VoiceState;
   lines: Line[];
   error: string | null;
+  timings: Record<string, number> | null;
+  model: string | null;
+  turns: number;
 };
 
 type FromServer =
@@ -23,7 +35,8 @@ type FromServer =
   | { type: "heard"; text: string }
   | { type: "token"; text: string }
   | { type: "done"; text: string; interrupted: boolean }
-  | { type: "state"; state: VoiceView["state"] }
+  | { type: "turn"; id: number; timings: Record<string, number>; model: string | null }
+  | { type: "state"; state: "listening" | "hearing" | "thinking" | "speaking" | "idle" }
   | { type: "error"; text: string };
 
 const MIC_RATE = 16000;
@@ -35,10 +48,13 @@ let view: VoiceView = {
   index: 0,
   playing: false,
   heard: null,
-  listening: false,
+  onCall: false,
   state: "idle",
   lines: [],
   error: null,
+  timings: null,
+  model: null,
+  turns: 0,
 };
 const watchers = new Set<() => void>();
 const set = (patch: Partial<VoiceView>) => {
@@ -50,6 +66,7 @@ let socket: WebSocket | undefined;
 let ctx: AudioContext | undefined;
 let player: PcmPlayer | undefined;
 let mic: MicCapture | undefined;
+let micUse: "hold" | "call" | null = null;
 let retry: ReturnType<typeof setTimeout> | undefined;
 let seq = 0;
 
@@ -61,7 +78,12 @@ const nextId = () => {
 function audio(): PcmPlayer {
   const context = ctx ?? createAudioContext();
   ctx = context;
-  player ??= new PcmPlayer(context);
+  if (!player) {
+    player = new PcmPlayer(context);
+    player.onIdle = () => {
+      if (view.state === "speaking" && !view.onCall) set({ state: "idle" });
+    };
+  }
   if (context.state === "suspended") void context.resume().catch(() => undefined);
   return player;
 }
@@ -103,11 +125,11 @@ function onMessage(m: FromServer) {
         path: m.path,
         index: m.index,
         playing: m.playing,
-        ...(m.path !== view.path ? { heard: null } : {}),
+        ...(m.path !== view.path || m.finished ? { heard: null } : {}),
       });
       break;
     case "sentence":
-      if (m.path === view.path) set({ heard: { index: m.index, text: m.text } });
+      if (m.path === view.path) set({ heard: { index: m.index, text: m.text }, index: m.index });
       break;
     case "hush":
       player?.clear();
@@ -123,9 +145,16 @@ function onMessage(m: FromServer) {
       break;
     case "done":
       settleLive(m.text);
+      if (!view.onCall && view.state !== "speaking") set({ state: "idle" });
+      break;
+    case "turn":
+      set({ timings: m.timings, model: m.model, turns: view.turns + 1 });
       break;
     case "state":
-      set({ state: m.state });
+      if (view.onCall) set({ state: m.state === "idle" ? "listening" : m.state });
+      else if (m.state === "speaking") set({ state: "speaking" });
+      else if (m.state === "thinking" || m.state === "hearing") set({ state: "busy" });
+      else if (view.state !== "recording" && !player?.playing) set({ state: "idle" });
       break;
     case "error":
       set({ error: m.text });
@@ -164,7 +193,7 @@ export function disconnect() {
   const ws = socket;
   socket = undefined;
   ws?.close();
-  stopListening();
+  closeMic();
 }
 
 export function say(text: string) {
@@ -172,43 +201,84 @@ export function say(text: string) {
   send({ type: "text", text });
 }
 
-export function hush() {
+export function stopSpeaking() {
   player?.clear();
   send({ type: "stop" });
+  if (!view.onCall) set({ state: "idle" });
 }
+
+export const hush = stopSpeaking;
 
 export function resetLines(lines: Line[]) {
   set({ lines });
 }
 
-export async function startListening() {
-  const out = audio();
-  if (mic || !ctx) return;
+async function openMicFor(use: "hold" | "call"): Promise<boolean> {
+  audio();
+  micUse = use;
+  if (mic) return true;
+  const context = ctx;
+  if (!context) return false;
   try {
     const stream = await openMic();
     mic = new MicCapture(
-      ctx,
+      context,
       stream,
       (pcm) => {
-        if (socket?.readyState === WebSocket.OPEN) socket.send(pcm.buffer);
+        if (micUse && socket?.readyState === WebSocket.OPEN) socket.send(pcm.buffer);
       },
       MIC_RATE,
     );
     await mic.start();
-    send({ type: "mic", on: true });
-    set({ listening: true, error: null });
-    void out;
+    set({ error: null });
+    return true;
   } catch (e) {
     mic = undefined;
-    set({ listening: false, error: micErrorMessage(e) });
+    micUse = null;
+    set({ error: micErrorMessage(e), state: "idle" });
+    return false;
   }
 }
 
-export function stopListening() {
+function closeMic() {
   mic?.stop();
   mic = undefined;
-  send({ type: "mic", on: false });
-  set({ listening: false });
+  micUse = null;
+}
+
+let holding = false;
+
+export async function startRecording() {
+  if (view.onCall || holding) return;
+  holding = true;
+  player?.clear();
+  send({ type: "hold", on: true });
+  set({ state: "recording" });
+  if (!(await openMicFor("hold"))) {
+    holding = false;
+    send({ type: "hold", on: false });
+  }
+}
+
+export function stopRecording() {
+  if (!holding) return;
+  holding = false;
+  send({ type: "hold", on: false });
+  closeMic();
+  set({ state: "busy" });
+}
+
+export async function startCall() {
+  if (view.onCall) return;
+  if (!(await openMicFor("call"))) return;
+  send({ type: "call", on: true });
+  set({ onCall: true, state: "listening" });
+}
+
+export function endCall() {
+  send({ type: "call", on: false });
+  closeMic();
+  set({ onCall: false, state: "idle" });
 }
 
 export function useVoice(): VoiceView {

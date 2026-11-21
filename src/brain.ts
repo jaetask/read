@@ -1,6 +1,6 @@
 import type { Calls, Outcome } from "@jaetask/open-agent-kit";
 import type { Agent } from "./agent.js";
-import type { Turns } from "./chat/turns.js";
+import { Trace, tracing } from "./chat/trace.js";
 import {
   CHOICE,
   NUMBERED,
@@ -9,6 +9,7 @@ import {
   type ReadingCommand,
 } from "./files/commands.js";
 import type { Document } from "./files/sections.js";
+import { readerDomain } from "./reader/domain.js";
 import type { Reader } from "./reader/reader.js";
 import { type Brain, durableBrain } from "./voice/index.js";
 
@@ -18,7 +19,6 @@ export type ReadBrainOptions = {
   reader: Reader;
   calls: Calls;
   agent: Agent | undefined;
-  turns: Turns;
   owner: string;
   note: Note;
   source: () => "voice" | "typed";
@@ -26,31 +26,42 @@ export type ReadBrainOptions = {
 
 const plain = (title: string) => title.replace(NUMBERED, "");
 
-export function readBrain(options: ReadBrainOptions): Brain & { choices: number[] | undefined } {
+const EFFECTS = new Map(readerDomain.actions.map((a) => [a.name, a.effect as string]));
+
+export type ReadBrain = Brain & { choices: number[] | undefined; trace: Trace | undefined };
+
+export function readBrain(options: ReadBrainOptions): ReadBrain {
   const { reader } = options;
   let seq = 0;
   let fileChoices: { options: string[]; play: boolean } | undefined;
-  const state = { choices: undefined as number[] | undefined };
+  const state = {
+    choices: undefined as number[] | undefined,
+    trace: undefined as Trace | undefined,
+  };
 
   const call = (action: string, input: unknown = {}): Promise<Outcome> => {
     seq += 1;
-    return options.calls.invoke({
-      id: `voice-${Date.now()}-${seq}`,
-      action: `reader.${action}`,
-      input,
-      principal: { id: options.owner },
-      caller: "ui",
-    });
+    const run = () =>
+      options.calls.invoke({
+        id: `voice-${Date.now()}-${seq}`,
+        action: `reader.${action}`,
+        input,
+        principal: { id: options.owner },
+        caller: "ui",
+      });
+    const trace = state.trace;
+    return trace
+      ? trace.call(`reader.${action}`, EFFECTS.get(action) ?? "write", input, "command", run)
+      : run();
   };
 
-  const record = (said: string, reply: string, how: "command" | "agent") =>
-    options.turns.add({
-      file: reader.state.path ?? "",
-      said,
-      reply,
-      how,
-      source: options.source(),
-    });
+  const record = (reply: string, how: "command" | "agent", route: string) => {
+    const trace = state.trace;
+    if (!trace) return;
+    trace.reply = reply;
+    trace.how = how;
+    if (!trace.routeLabel) trace.route(route);
+  };
 
   function listParts(doc: Document): string {
     const top = doc.sections
@@ -116,7 +127,11 @@ export function readBrain(options: ReadBrainOptions): Brain & { choices: number[
       if (path) {
         options.note(`Opening “${titles.get(path) ?? path}”.`);
         await call("reader-open", { file: path, play });
-        record(text, `Opening “${titles.get(path) ?? path}”.`, "command");
+        record(
+          `Opening “${titles.get(path) ?? path}”.`,
+          "command",
+          `files: open → ${titles.get(path) ?? path}`,
+        );
         return true;
       }
     }
@@ -139,10 +154,10 @@ export function readBrain(options: ReadBrainOptions): Brain & { choices: number[
         const note = `Opening “${titles.get(open.path) ?? open.path}”.`;
         options.note(note);
         await call("reader-open", { file: open.path, play: open.play });
-        record(text, note, "command");
+        record(note, "command", `files: open → ${titles.get(open.path) ?? open.path}`);
         return true;
       }
-      record(text, say, "command");
+      record(say, "command", `files: ${open.cmd === "list_files" ? "list" : "which file?"}`);
       yield say;
       return true;
     }
@@ -155,7 +170,7 @@ export function readBrain(options: ReadBrainOptions): Brain & { choices: number[
         const note = `Reading “${plain(doc.sections[k]?.title ?? "")}”.`;
         options.note(note);
         await call("reader-goto", { index: k, play: true });
-        record(text, note, "command");
+        record(note, "command", `article: choice → ${plain(doc.sections[k]?.title ?? "")}`);
         return true;
       }
     }
@@ -168,7 +183,11 @@ export function readBrain(options: ReadBrainOptions): Brain & { choices: number[
     const note =
       say || (start !== undefined ? `Reading “${plain(doc.sections[start]?.title ?? "")}”.` : "");
     if (!say && note) options.note(note);
-    record(text, note, "command");
+    record(
+      note,
+      "command",
+      `article: ${cmd.cmd}${start !== undefined ? ` → ${plain(doc.sections[start]?.title ?? "")}` : ""}`,
+    );
     if (say) yield say;
     return true;
   }
@@ -177,24 +196,46 @@ export function readBrain(options: ReadBrainOptions): Brain & { choices: number[
     get choices() {
       return state.choices;
     },
+    get trace() {
+      return state.trace;
+    },
     async *reply(text, { signal }) {
+      const trace = new Trace();
+      trace.said = text;
+      state.trace = trace;
       const handled = yield* deterministic(text);
       if (handled) return;
+      const doc = await reader.document();
+      trace.route(doc ? "article: question" : "chat: question");
       if (!options.agent) {
         const say = "No model is set up, so I can only follow reading commands.";
-        record(text, say, "agent");
+        record(say, "agent", "chat: no model");
         yield say;
         return;
       }
-      const conversation = await options.agent.conversation(reader.state.path ?? "");
-      let reply = "";
-      for await (const piece of durableBrain(options.agent.harness, conversation).reply(text, {
-        signal,
-      })) {
-        if (typeof piece === "string") reply += piece;
-        yield piece;
+      trace.how = "agent";
+      trace.llm = { start: trace.at() };
+      tracing.start(trace);
+      try {
+        const conversation = await options.agent.conversation(reader.state.path ?? "");
+        let reply = "";
+        for await (const piece of durableBrain(options.agent.harness, conversation).reply(text, {
+          signal,
+        })) {
+          if (typeof piece === "string") {
+            if (trace.llm.first === undefined && piece.trim()) trace.llm.first = trace.at();
+            reply += piece;
+          }
+          yield piece;
+        }
+        trace.reply = reply.trim();
+      } catch (error) {
+        trace.error = String((error as Error)?.message ?? error);
+        throw error;
+      } finally {
+        trace.llm.end = trace.at();
+        tracing.stop(trace);
       }
-      record(text, reply.trim(), "agent");
     },
   };
 }

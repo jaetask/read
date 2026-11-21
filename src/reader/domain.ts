@@ -365,6 +365,61 @@ export const chatTurns = defineAction({
   run: ({ file }, { reader, turns }: Ctx) => turns.list(file ?? reader.state.path ?? ""),
 });
 
+const Detail = z
+  .object({
+    route_how: z.string(),
+    model: z.string().nullable(),
+    spans: z.array(z.record(z.string(), z.unknown())),
+    tool_calls: z.array(z.record(z.string(), z.unknown())),
+    timings: z.record(z.string(), z.number()),
+    interrupted: z.boolean(),
+    error: z.string().nullable(),
+  })
+  .nullable();
+
+export const chatTimeline = defineAction({
+  name: "chat-timeline",
+  description:
+    "The trajectory of the conversation about a file: for each turn what was said, how it was routed, every reader call with its arguments and result, the reply, and the timings. Leave file out for the open file.",
+  effect: "read",
+  input: z.object({ file: z.string().optional() }),
+  output: z.object({
+    session: z.object({ agent_name: z.string(), system_note: z.string() }),
+    turns: z.array(
+      z.object({
+        id: z.number(),
+        idx: z.number(),
+        source: z.string(),
+        user_text: z.string(),
+        reply: z.string(),
+        at: z.number(),
+        detail: Detail,
+      }),
+    ),
+  }),
+  run: async ({ file }, { reader, turns }: Ctx) => {
+    const path = file ?? reader.state.path ?? "";
+    const doc = path ? await reader.library.open(path).catch(() => undefined) : undefined;
+    return {
+      session: {
+        agent_name: "Read",
+        system_note: doc
+          ? `Reading "${doc.title}" (${doc.sections.length} sections). Reading commands are resolved by Read itself; anything else goes to the model with the file's text.`
+          : "No file open.",
+      },
+      turns: turns.list(path).map((t, i) => ({
+        id: t.id,
+        idx: i + 1,
+        source: t.source,
+        user_text: t.said,
+        reply: t.reply,
+        at: t.at,
+        detail: t.detail,
+      })),
+    };
+  },
+});
+
 export const readerDomain = defineDomain<ReaderDeps>({
   name: "reader",
   version: "0.1.0",
@@ -386,5 +441,6 @@ export const readerDomain = defineDomain<ReaderDeps>({
     readerResume,
     readerClose,
     chatTurns,
+    chatTimeline,
   ],
 });

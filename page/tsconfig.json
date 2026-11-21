@@ -6,7 +6,8 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": [],
     "jsx": "react-jsx",
-    "noEmit": true
+    "noEmit": true,
+    "exactOptionalPropertyTypes": false
   },
   "include": ["*.ts", "*.tsx"],
   "exclude": []

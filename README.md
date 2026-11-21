@@ -10,7 +10,8 @@ The library's folders and files are on the left. Open one and it shows in the mi
 
 - **A library of files.** Markdown, plain text and PDF files in a folder and its subfolders. Make folders, drag files into them, rename and move them from the sidebar; a file keeps its place and conversation when it moves. A Markdown file is split by its headings, a PDF by its pages.
 - **Read aloud.** One section after another, in the voice you set, with the sentence being heard highlighted. Each file keeps its place.
-- **Steered by voice or typing.** Reading commands ("next", "pause", "carry on", "reread what it is", "open the Orca file") act at once, without a model.
+- **A trajectory of every turn.** Chat and Trajectory at the top of the conversation: each turn's route, reader calls with their arguments and results, and timings, to see why a command did or did not work.
+- **Steered by voice or typing.** Hold to talk (or hold Space), or a hands-free voice call; Esc stops it speaking. Reading commands ("next", "pause", "carry on", "reread what it is", "open the Orca file") act at once, without a model.
 - **Questions answered from the file.** Anything else goes to the agent, which answers from the open file's text in a few spoken sentences and stops when you talk over it.
 - **Built for other Apps.** The library and the reader are Actions, served over MCP, so another App can open a file, move the reader or look something up.
 
