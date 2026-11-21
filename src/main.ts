@@ -11,7 +11,6 @@ mkdirSync(filesDir, { recursive: true });
 const app = await createRead({
   dataDir,
   filesDir,
-  setupSecret: env.KIT_SETUP_SECRET,
   connect: (env.KIT_CONNECT ?? "").split(",").filter(Boolean),
   page: fileURLToPath(new URL("../public", import.meta.url)),
 });
